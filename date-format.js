@@ -15,7 +15,9 @@
 // TODO: allow for moment locales to be used
 // TODO: allow for moment formatting to be used in the masks (and this will make the library momentito) so it can be used as a drop-in replacement.
 
-import { kind_of, compact, left_pad as pad } from './utils'
+import { compact, left_pad as pad } from '@hyper/utils'
+
+import { DAY_NAMES, DAY_NAMES_SHORT, MONTH_NAMES, MONTH_NAMES_SHORT } from '@hyper/lingua/dates'
 
 const token = /d{1,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|[LloSZWN]|'[^']*'|'[^']*'/g
 const timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g
@@ -32,10 +34,10 @@ var flags = {
   dd: (_) => pad(_),
 
   ddd_: 'D',
-  ddd: (_) => i18n.dayNames[_],
+  ddd: (_) => DAY_NAMES[_],
 
   dddd_: 'D',
-  dddd: (_) => i18n.dayNames[_ + 7],
+  dddd: (_) => DAY_NAMES_SHORT[_],
 
   m_: 'm',
   m: (_) => _ + 1,
@@ -44,10 +46,10 @@ var flags = {
   mm: (_) => pad(_ + 1),
 
   mmm_: 'm',
-  mmm: (_) => i18n.monthNames[_],
+  mmm: (_) => MONTH_NAMES[_],
 
   mmmm_: 'm',
-  mmmm: (_) => i18n.monthNames[_ + 12],
+  mmmm: (_) => MONTH_NAMES[_],
 
   yy_: 'y',
   yy: (_) => (_+'').slice(2),
@@ -113,13 +115,11 @@ var flags = {
   N: (date) => getDayOfWeek(date),
 }
 
-var saved_date, __d
-
 export default function dateFormat (_date, _mask, utc, gmt) {
   var date, mask
 
   // You can't provide utc if you skip other args (use the 'UTC:' mask prefix)
-  if (kind_of(_date) === 'string' && !_mask) {
+  if (typeof _date === 'string' && !_mask) {
     mask = _date
     date = new Date
   } else if (!((date = _date || new Date) instanceof Date)) {
@@ -130,9 +130,17 @@ export default function dateFormat (_date, _mask, utc, gmt) {
     return 'Invalid date'
   }
 
-  mask = (dateFormat.masks[_mask] || _mask || dateFormat.masks['default']) + ''
+  mask = (masks[_mask] || _mask || masks['default']) + ''
 
-  var ret, c, _, v = {
+  let ret, c, _, f, tsi = 0
+  let maskSlice = mask.slice(0, 4)
+
+  // Allow setting the utc/gmt argument via the mask
+  if ((maskSlice === 'UTC:' && (utc = true)) || (maskSlice === 'GMT:' && (gmt = true))) mask = mask.slice(4)
+
+  _ = utc ? 'getUTC' : 'get'
+
+  let v = {
     _: (date) => date,
     o: (date) => utc ? 0 : date.getTimezoneOffset(),
     d: (date) => date[_ + 'Date'](),
@@ -143,25 +151,23 @@ export default function dateFormat (_date, _mask, utc, gmt) {
     M: (date) => date[_ + 'Minutes'](),
     s: (date) => date[_ + 'Seconds'](),
     L: (date) => date[_ + 'Milliseconds'](),
-  }, maskSlice = mask.slice(0, 4)
-
-  // Allow setting the utc/gmt argument via the mask
-  if ((maskSlice === 'UTC:' && (utc = true)) || (maskSlice === 'GMT:' && (gmt = true))) mask = mask.slice(4)
-
-  _ = utc ? 'getUTC' : 'get'
+  }
 
   if (c = mask_cache[mask]) {
     ret = ''
-    for (var f, i = 0; i < c.length; i++) ret += typeof(f = c[i]) === 'function' ? typeof(f.v) === 'function' ? f(f.v(date)) : f() : f
+    for (; i < c.length; i++) {
+      ret += typeof(f = c[i]) === 'function' ? typeof(f.v) === 'function' ? f(f.v(date)) : f() : f
+    }
     return ret
   }
-  else c = []
 
-  var tsi = -1, ts = mask.split(token)
+  c = []
+  tsi = -1
+  ts = mask.split(token)
 
   // OPTIMISED!! (LOL)
   return ret = mask.replace(token, (match, v1, v2, v3) => {
-    var fn_v,
+    let fn_v,
       fn = flags[match],
       is_fn = typeof fn === 'function'
 
@@ -175,33 +181,23 @@ export default function dateFormat (_date, _mask, utc, gmt) {
   }), mask_cache[mask] = compact(ts), ret
 }
 
-dateFormat.masks = {
+// add the masks you use. the default is provided
+export let masks = {
   'default': 'ddd mmm dd yyyy HH:MM:ss',
-  'shortDate': 'm/d/yy',
-  'mediumDate': 'mmm d, yyyy',
-  'longDate': 'mmmm d, yyyy',
-  'fullDate': 'dddd, mmmm d, yyyy',
-  'shortTime': 'h:MM TT',
-  'mediumTime': 'h:MM:ss TT',
-  'longTime': 'h:MM:ss TT Z',
-  'isoDate': 'yyyy-mm-dd',
-  'isoTime': 'HH:MM:ss',
-  'isoDateTime': "yyyy-mm-dd'T'HH:MM:sso",
-  'isoUtcDateTime': "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'",
-  'expiresHeaderFormat': 'ddd, dd mmm yyyy HH:MM:ss Z'
+  // 'shortDate': 'm/d/yy',
+  // 'mediumDate': 'mmm d, yyyy',
+  // 'longDate': 'mmmm d, yyyy',
+  // 'fullDate': 'dddd, mmmm d, yyyy',
+  // 'shortTime': 'h:MM TT',
+  // 'mediumTime': 'h:MM:ss TT',
+  // 'longTime': 'h:MM:ss TT Z',
+  // 'isoDate': 'yyyy-mm-dd',
+  // 'isoTime': 'HH:MM:ss',
+  // 'isoDateTime': "yyyy-mm-dd'T'HH:MM:sso",
+  // 'isoUtcDateTime': "UTC:yyyy-mm-dd'T'HH:MM:ss'Z'",
+  // 'expiresHeaderFormat': 'ddd, dd mmm yyyy HH:MM:ss Z'
 }
 
-// Internationalization strings
-var i18n = dateFormat.i18n = {
-  dayNames: [
-    'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat',
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-  ],
-  monthNames: [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'
-  ]
-}
 
 /**
  * Get the ISO 8601 week number
@@ -210,23 +206,24 @@ var i18n = dateFormat.i18n = {
  */
 function getWeek (date) {
   // Remove time components of date
-  var targetThursday = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  let targetThursday = new Date(date.getFullYear(), date.getMonth(), date.getDate())
 
   // Change date to Thursday same week
   targetThursday.setDate(targetThursday.getDate() - ((targetThursday.getDay() + 6) % 7) + 3)
 
   // Take January 4th as it is always in week 1 (see ISO 8601)
-  var firstThursday = new Date(targetThursday.getFullYear(), 0, 4)
+  let firstThursday = new Date(targetThursday.getFullYear(), 0, 4)
 
   // Change date to Thursday same week
   firstThursday.setDate(firstThursday.getDate() - ((firstThursday.getDay() + 6) % 7) + 3)
 
   // Check if daylight-saving-time-switch occured and correct for it
-  var ds = targetThursday.getTimezoneOffset() - firstThursday.getTimezoneOffset()
+  let ds = targetThursday.getTimezoneOffset() - firstThursday.getTimezoneOffset()
   targetThursday.setHours(targetThursday.getHours() - ds)
 
   // Number of weeks between target Thursday and first Thursday
-  var weekDiff = (targetThursday - firstThursday) / (86400000 * 7)
+  let weekDiff = (targetThursday - firstThursday) / (86400000 * 7)
+
   return 1 + Math.floor(weekDiff)
 }
 
