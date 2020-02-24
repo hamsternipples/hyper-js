@@ -17,20 +17,20 @@ export function __debug (msg) {
 }
 
 // micro-optimization: http://jsperf.com/for-vs-foreach/292
-export function each (arr, fn) {
-  for (var i = 0; i < arr.length; ++i) fn.call(arr, arr[i], i)
+export function each (arr, fn, _this, i) {
+  for (i = 0; i < arr.length; ++i) fn.call(_this || arr, arr[i], i)
 }
 
-export function each_reverse (arr, fn) {
-  for (var i = arr.length - 1; i >= 0; i--) fn.call(arr, arr[i], i)
+export function each_reverse (arr, fn, _this, i) {
+  for (i = arr.length - 1; i >= 0; i--) fn.call(_this || arr, arr[i], i)
 }
 
-export function call_each (arr) {
-  for (var i = 0; i < arr.length; ++i) arr[i].call(arr)
+export function call_each (arr, _this, i) {
+  for (i = 0; i < arr.length; ++i) arr[i].call(_this || arr)
 }
 
-export function obj_aliases (proto, aliases) {
-  for (let k in aliases) proto[k] = proto[aliases[k]]
+export function obj_aliases (proto, aliases, k) {
+  for (k in aliases) proto[k] = proto[aliases[k]]
 }
 
 export const int = (s) => parseInt(s, 10)
