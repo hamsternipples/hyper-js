@@ -1,4 +1,6 @@
-import { each, sprintf } from '@hyper/utils'
+import { each } from '@hyper/utils'
+import { sprintf } from '@hyper/format'
+import { DAY_NAMES, DAY_NAMES_SHORT, MONTH_NAMES, MONTH_NAMES_SHORT } from '@hyper/lingua/dates'
 
 // @Incomplete: - move locale configuration to lingua
 // @Incomplete: - merge the locale with 'date-format' so they share
@@ -64,8 +66,6 @@ var thresholds = {
   d : 26,         // days to month
   M : 11          // months to year
 }
-
-import { DAY_NAMES, DAY_NAMES_SHORT, MONTH_NAMES, MONTH_NAMES_SHORT } from '@hyper/lingua/dates'
 
 var locales = {
   en: {

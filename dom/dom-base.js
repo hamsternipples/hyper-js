@@ -1,3 +1,5 @@
+import { error } from '@hyper/utils'
+
 // commonly used globals exported (to save a few bytes)
 export const win = window
 export const doc = win.document

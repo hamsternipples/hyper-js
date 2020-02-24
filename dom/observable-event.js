@@ -1,4 +1,5 @@
 
+import { error } from '@hyper/utils'
 import { is_obv, ensure_obv, bind2 } from '@hyper/dom/observable'
 import { on, off, dispatch_event, prevent_default } from '@hyper/dom/dom-base'
 
