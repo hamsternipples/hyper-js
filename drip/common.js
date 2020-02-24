@@ -1,6 +1,5 @@
 
-import concat from './concat'
-import { is_array } from '@hyper/utils'
+import { is_array, concat } from '@hyper/utils'
 
 /**
  * ### .many (event, ttl, callback)
