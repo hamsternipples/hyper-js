@@ -120,8 +120,8 @@ export function obj_apply (obj, array, cb) {
 // `cb(obj, array[i], array2[j])` gets called `array.length * array2.length` times
 export function obj_apply2 (obj, array, array2, cb) {
   for (let item of array)
-  for (let item2 of array2)
-    cb(obj, item, item2)
+    for (let item2 of array2)
+      cb(obj, item, item2)
   return obj
 }
 
@@ -145,7 +145,7 @@ export function pick (object, keys) {
 
   if (typeof keys === 'function') {
     for (x in object) {
-      if (object.hasOwnProperty(x) && keys(object[x], x)) {
+      if (keys(object[x], x)) {
         data[x] = object[x]
       }
     }
