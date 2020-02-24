@@ -113,7 +113,9 @@ let event_opts = (opts) =>
 // event stuff
 // @Cleanup: replace all instances of 'addEventListener' with this function (to save a few bytes)
 export function on (emitter, event, listener, opts = false) {
-  if (DEBUG && emitter.tagName === 'A' && (typeof opts === 'boolean' || opts.passive)) error('you are trying to listen to an event on an element which will perform page navigation. pass `{passive: false}` if you want to change the default behaviour of the anchor element')
+  if (DEBUG && emitter.tagName === 'A' && (typeof opts === 'boolean' || opts.passive)) {
+    error('you are trying to listen to an event on an element which will perform page navigation. pass `{passive: false}` if you want to change the default behaviour of the anchor element')
+  }
   (emitter.on || emitter.addEventListener).call(emitter, event, listener, event_opts(opts))
 }
 
