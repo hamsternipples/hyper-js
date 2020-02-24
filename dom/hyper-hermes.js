@@ -10,6 +10,7 @@
 import { is_obv } from './observable'
 import { observe_event, add_event } from './observable-event'
 import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/utils'
+import { each } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
 
 import { win, doc, customElements } from './dom-base'
@@ -51,23 +52,22 @@ function hyper_hermes (create_element) {
     function item (l) {
       let r, s, i, o, k
       function parse_selector (string) {
-        let v, m = string.split(/([\.#]?[a-zA-Z0-9_:-]+)/)
-        if (/^\.|#/.test(m[1])) e = create_element('div')
-        // if (!root) root = e // the first element this
-        for (v of m) {
-          if (typeof v === 'string' && (i = v.length)) {
+        r = string.split(/([\.#]?[a-zA-Z0-9_:-]+)/)
+        if (/^\.|#/.test(r[1])) e = create_element('div')
+        each(r, (v) => {
+          if (v && (i = v.length)) {
             if (!e) {
               e = create_element(v, args)
             } else {
               if ((k = v[0]) === '.' || k === '#') {
-                if (s = v.substring(1, i)) {
+                if (s = v.slice(1, i)) {
                   if (k === '.') e.classList.add(s)
                   else e.id = s
                 }
               }
             }
           }
-        }
+        })
       }
 
       if (!e && typeof l === 'number' && l < common_tags.length)
@@ -79,17 +79,17 @@ function hyper_hermes (create_element) {
         if (!e) {
           parse_selector(l)
         } else {
-          e.aC(r = txt(l))
+          e.aC(txt(l))
         }
       } else if (typeof l === 'number'
         || typeof l === 'boolean'
         || l instanceof Date
         || l instanceof RegExp ) {
-          e.aC(r = txt(l.toString()))
+          e.aC(txt(l.toString()))
       } else if (Array.isArray(l)) {
         e.aC(l, cleanupFuncs)
       } else if (isNode(l) || l instanceof win.Text) {
-        e.aC(r = l)
+        e.aC(l)
       } else if (typeof l === 'object') {
         // is a promise
         if (typeof l.then === 'function') {
@@ -101,12 +101,10 @@ function hyper_hermes (create_element) {
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
       } else if (typeof l === 'function') {
-        r = make_obv_node(e, l, cleanupFuncs)
+        make_obv_node(e, l, cleanupFuncs)
       } else if (DEBUG) {
         error('unknown/unsupported item being appended to element')
       }
-
-      return r
     }
 
     while (args.length) {
@@ -169,7 +167,7 @@ export let custom_attrs = {
 
 export function set_attr (e, key_, v, cleanupFuncs = []) {
   // convert short attributes to long versions. s -> style, c -> className
-  let s, o, i, k = short_attrs[key_] || key_
+  var s, o, i, k = short_attrs[key_] || key_
   if (typeof v === 'function') {
     next_tick(() => {
       if (typeof(o = custom_attrs[k]) === 'function') {
@@ -188,8 +186,8 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
           set_attr(e, k, v, cleanupFuncs)
         }, 1)) // 1 = do_immediately
         s = e.nodeName
-        s === "INPUT" && observe_event(cleanupFuncs, e, {input: v})
-        s === "SELECT" && observe_event(cleanupFuncs, e, k === 'label' ? {select_label: v} : {select: v})
+        if (s === "INPUT") observe_event(cleanupFuncs, e, {input: v})
+        if (s === "SELECT") observe_event(cleanupFuncs, e, k === 'label' ? {select_label: v} : {select: v})
       }
     })
   } else {
@@ -295,23 +293,24 @@ export function arrayFragment (e, arr, cleanupFuncs) {
   if (arr.observable === 'array') {
     // TODO: add a comment to know where the array begins and ends (a la angular)
     function onchange (ev) {
+      // this should remain a 'var' -- otherwise terser will deoptimise it.
       var i, j, o, oo, len = arr.length
-      switch (ev.type) {
-      case 'unshift':
+      var type = ev.type
+      if (type == 'unshift') {
         for (i = ev.values.length - 1; i >= 0; i--)
           e.insertBefore(isNode(o = ev.values[i]) ? o : txt(o), arr[0])
-        break
-      case 'push':
+      }
+      else if (type == 'push') {
         for (i = 0; i < ev.values.length; i++)
           e.insertBefore(isNode(o = ev.values[i]) ? o : txt(o), arr[arr.length + ev.values.length - i - 1])
-        break
-      case 'pop':
+      }
+      else if (type == 'pop') {
         e.removeChild(arr[len-1])
-        break
-      case 'shift':
+      }
+      else if (type == 'shift') {
         e.removeChild(arr[0])
-        break
-      case 'splice':
+      }
+      else if (type == 'splice') {
         if ((j = ev.idx) < 0) j += len // -idx
         // experimental:
         if (ev.remove) for (i = 0; i < ev.remove; i++) {
@@ -328,8 +327,8 @@ export function arrayFragment (e, arr, cleanupFuncs) {
         // if (ev.add) for (i = 0; i < ev.add.length; i++)
         //   e.insertBefore(isNode(o = ev.add[i]) ? o : txt(o), arr[j])
 
-        break
-      case 'sort':
+      }
+      else if (type == 'sort') {
         // technically no longer used, but still exists mainly for comparison purposes
         // although less element swaps are done with quiksort, it may be taxing on paint performance...
         // looking into it eventually :)
@@ -342,32 +341,32 @@ export function arrayFragment (e, arr, cleanupFuncs) {
             if (i === 1) o.focus(), o.focused = 0
           }
         }
-        break
-      case 'replace':
+      }
+      else if (type == 'replace') {
         o = ev.val
         oo = ev.old
         if (activeElement(o) || o.focused === 1) i = 1
         if (activeElement(oo)) oo.focused = 1
         e.replaceChild(o, oo)
         if (i === 1) o.focus(), o.focused = 0
-        break
-      case 'insert':
+      }
+      else if (type == 'insert') {
         if ((i = ev.idx) < 0) i += len // -idx
         e.insertBefore(ev.val, arr[i])
-        break
-      case 'reverse':
+      }
+      else if (type == 'reverse') {
         for (i = 0, j = +(arr.length / 2); i < j; i++)
           arr.emit('change', {type: 'swap', from: i, to: arr.length - i - 1 })
-        break
-      case 'move':
+      }
+      else if (type == 'move') {
         if ((i = ev.from) < 0) i += len // -idx
         if ((j = ev.to) < 0) j += len   // -idx
         o = arr[i]
         if (activeElement(o)) i = 1
         e.insertBefore(o, arr[j])
         if (i === 1) o.focus()
-        break
-      case 'swap':
+      }
+      else if (type == 'swap') {
         ev.j = h('div.swap', o = {s: {display: 'none'}})
         ev.k = h('div.swap', o)
         if ((i = ev.from) < 0) i += len // -idx
@@ -382,20 +381,20 @@ export function arrayFragment (e, arr, cleanupFuncs) {
         e.replaceChild(oo, ev.k)
         if (i === 1) o.focus()
         else if (i === 2) oo.focus()
-        break
-      case 'remove':
+      }
+      else if (type == 'remove') {
         if ((i = ev.idx) < 0) i += len // -idx
         e.removeChild(arr[i])
-        break
-      case 'set':
+      }
+      else if (type == 'set') {
         if ((i = ev.idx) < 0) i += len // -idx
         e.replaceChild(ev.val, arr[i])
-        break
-      case 'empty':
+      }
+      else if (type == 'empty') {
         for (i = 0; i < arr.length; i++)
           e.removeChild(arr[i])
-        break
-      default:
+      }
+      else if (DEBUG) {
         console.log('unknown event', ev)
       }
     }
@@ -417,8 +416,7 @@ export var h = new_dom_context(1)
 export function new_dom_context (no_cleanup) {
   // TODO: turn this into ctx = new Context ((el, args) => { ... })
   //  -- and, turn the context fn into a class??
-  var ctx = hyper_hermes((el, args) => {
-    var i
+  var ctx = hyper_hermes((el, args, i) => {
     return !~el.indexOf('-') ? cE(el)
       : (i = special_elements[el]) !== undefined ? new (customElements.get(el))(...args.splice(0, i))
       : new (customElements.get(el))
@@ -457,7 +455,7 @@ export function make_node (e, v, cleanupFuncs, placeholder) {
 }
 
 export function make_obv_node (e, v, cleanupFuncs = []) {
-  let r, o, nn, clean = [], placeholder
+  var r, o, nn, clean = [], placeholder
   if (typeof v === 'function') {
     if (is_obv(v)) {
       // observable
@@ -466,7 +464,7 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
       cleanupFuncs.push(v((val) => {
         nn = make_node(e, val, cleanupFuncs)
         if (Array.isArray(r)) {
-          for (val of r) e.rm(val)
+          each(r, v => e.rm(v))
         } else if (r) {
           if (DEBUG && r.parentNode !== e) error('obv unable to replace child node because parentNode has changed')
           else e.rC(nn, r)
@@ -498,8 +496,7 @@ Node_prototype.apply = function (obj, cleanupFuncs) {
   for (let k in obj) set_attr(this, k, obj[k], cleanupFuncs)
 }
 // https://jsperf.com/remove-all-child-nodes/2.atom
-Node_prototype.empty = function () {
-  var child
+Node_prototype.empty = function (child) {
   while (child = this.firstChild) this.removeChild(child)
 }
 
