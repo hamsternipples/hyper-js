@@ -1,6 +1,7 @@
 /*! VelocityJS.org (1.2.3). (C) 2014 Julian Shapiro. MIT @license: en.wikipedia.org/wiki/MIT_License */
 
 import $ from './jquery-shim'
+import { is_array } from '@hyper/utils'
 import hexToRgb from '@hyper/color/hexToRgb'
 
 /******************
@@ -76,7 +77,7 @@ var Type = {
   isString: function (variable) {
     return (typeof variable === 'string')
   },
-  isArray: Array.isArray || function (variable) {
+  isArray: is_array || function (variable) {
       return Object.prototype.toString.call(variable) === '[object Array]'
   },
   isFunction: function (variable) {

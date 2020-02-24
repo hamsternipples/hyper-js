@@ -2,6 +2,8 @@
 // inspired by: https://github.com/sindresorhus/dot-prop
 // Based on Kendo UI Core expression code <https://github.com/telerik/kendo-ui-core#license-information>
 
+import { is_array } from '@hyper/utils'
+
 export class Cache {
   constructor (maxSize) {
     this._maxSize = maxSize
@@ -60,7 +62,7 @@ export function getter (path, safe) {
   return function (obj) {
     let res = chunks[0](obj)
     let idx = 1
-    while (chunks[idx] && Array.isArray(res)) {
+    while (chunks[idx] && is_array(res)) {
       res = Array.prototype.concat.apply([], res.map(chunks[idx]))
       idx += 1
     }
@@ -75,7 +77,7 @@ export function getterCSP (path, safe) {
   return function (obj) {
     let res = chunks[0](obj)
     let idx = 1
-    while (chunks[idx] && Array.isArray(res)) {
+    while (chunks[idx] && is_array(res)) {
       res = Array.prototype.concat.apply([], res.map(chunks[idx]))
       idx += 1
     }

@@ -1,6 +1,8 @@
 'use strict'
 
-import { define_prop, define_props, define_value, define_getter, remove_every as compactor, error } from '@hyper/utils'
+import { define_prop, define_props, define_value, define_getter } from '@hyper/utils'
+import { remove_every as compactor, error } from '@hyper/utils'
+import { is_array } from '@hyper/utils'
 import { emit, remove } from '@hyper/listeners'
 
 // knicked from: https://github.com/dominictarr/observable/blob/master/index.js
@@ -83,7 +85,7 @@ export function obv_obj (initialValue, _keys) {
     _obv: define_value('object'),
     // TODO: implement get/set,on/off for compatibility with scuttlebutt?
     get: define_value((path, default_value) => {
-      let o = obj, p, paths = Array.isArray(path) ? path
+      let o = obj, p, paths = is_array(path) ? path
         : typeof path === 'string' && ~path.indexOf('.') ? path.split('.')
         : [path]
 
@@ -102,7 +104,7 @@ export function obv_obj (initialValue, _keys) {
     })
   }
 
-  for (let k of Array.isArray(_keys) ? _keys : Object.keys(initialValue)) {
+  for (let k of is_array(_keys) ? _keys : Object.keys(initialValue)) {
     let _obv, v = initialValue[k]
     if (v !== undefined) {
       if (v._obv === 'value') obvs[k] = v, keys.push(k)

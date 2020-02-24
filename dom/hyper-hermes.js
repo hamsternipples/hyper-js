@@ -10,7 +10,7 @@
 import { is_obv } from './observable'
 import { observe_event, add_event } from './observable-event'
 import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/utils'
-import { each } from '@hyper/utils'
+import { each, is_array } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
 
 import { win, doc, customElements } from './dom-base'
@@ -94,7 +94,7 @@ function hyper_hermes (create_element) {
         || l instanceof Date
         || l instanceof RegExp ) {
           e.aC(txt(l.toString()))
-      } else if (Array.isArray(l)) {
+      } else if (is_array(l)) {
         e.aC(l, cleanupFuncs)
       } else if (isNode(l) || l instanceof win.Text) {
         e.aC(l)
@@ -222,7 +222,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
     } else if (k === 'class') {
       if (v) {
         o = e.classList
-        if (Array.isArray(v)) for (s of v) s && o.add(s)
+        if (is_array(v)) for (s of v) s && o.add(s)
         else if (typeof v === 'object')
           for (let s in v) is_obv(v[s])
             ? cleanupFuncs.z(v[s]((v) => o.toggle(s, v), 1))
@@ -410,7 +410,7 @@ export var special_elements = {}
 define_prop(special_elements, 'define', define_value((name, fn, args) => {
   // if (DEBUG) console.log('defining', name, args)
   customElements.define(name, fn)
-  special_elements[name] = typeof args === 'number' ? args : Array.isArray(args) ? args.length : fn.length || 0
+  special_elements[name] = typeof args === 'number' ? args : is_array(args) ? args.length : fn.length || 0
 }))
 
 export var h = new_dom_context(1)
@@ -439,7 +439,7 @@ export function new_svg_context (no_cleanup) {
 
 export function make_node (e, v, cleanupFuncs, placeholder) {
   return  isNode(v) ? v
-    : Array.isArray(v) ? arrayFragment(e, v, cleanupFuncs)
+    : is_array(v) ? arrayFragment(e, v, cleanupFuncs)
     : typeof v === 'function' ? (
       is_obv(v) ? make_obv_node(e, v, cleanupFuncs) : (() => {
         while (typeof v === 'function') v = v.call(e, e)
@@ -464,7 +464,7 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
       e.aC(placeholder = comment(DEBUG ? '4:obv-bottom' : 4))
       cleanupFuncs.z(v((val) => {
         nn = make_node(e, val, cleanupFuncs)
-        if (Array.isArray(r)) {
+        if (is_array(r)) {
           // @Bug: if the value is an array of promises, then they will never be cleaned up!
           // eg. v([async_fn(),another_async_fn()])
           // I have no idea how to fix this at all! perhaps promises should add a cleanup function when they append?!
@@ -475,8 +475,8 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
         }
 
         e.iB(nn, placeholder)
-        r = Array.isArray(val) ? val : nn
-      }), () => (placeholder.rm(), r && Array.isArray(r) ? each(r, r => r.rm()) : r.rm()))
+        r = is_array(val) ? val : nn
+      }), () => (placeholder.rm(), r && is_array(r) ? each(r, r => r.rm()) : r.rm()))
     } else {
       // normal function
       o = make_node(e, v, cleanupFuncs)

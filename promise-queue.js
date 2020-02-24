@@ -1,5 +1,7 @@
 // knicked from https://github.com/chenzhihao/easy-promise-queue
 
+import { is_array } from '@hyper/utils'
+
 export default class PromiseQueue {
   constructor (concurrency = 1) {
     this._queue = []
@@ -36,7 +38,7 @@ export default class PromiseQueue {
   }
 
   add (fn) {
-    if (Array.isArray(fn) && fn.every((f) => typeof f === 'function')) {
+    if (is_array(fn) && fn.every((f) => typeof f === 'function')) {
       return fn.length > 1
         ? this.add(fn.shift()).add(fn)
         : this.add(fn[0])

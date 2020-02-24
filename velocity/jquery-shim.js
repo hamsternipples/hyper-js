@@ -1,3 +1,4 @@
+import { is_array } from '@hyper/utils'
 /*************************
    Velocity jQuery Shim
 *************************/
@@ -39,7 +40,7 @@ $.type = function (obj) {
 }
 
 /* jQuery */
-$.isArray = Array.isArray || function (obj) {
+$.isArray = is_array || function (obj) {
   return $.type(obj) === 'array'
 }
 

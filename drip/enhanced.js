@@ -1,5 +1,5 @@
 import common from './common'
-import concat from './concat'
+import { is_array, concat } from '@hyper/utils'
 
 function EnhancedEmitter (opts, _ctx) {
   opts = opts || {}
@@ -46,7 +46,7 @@ function mixin (obj) {
 
 EnhancedEmitter.prototype.on = EnhancedEmitter.prototype.addListener = function (ev, fn) {
   var map = this._events || (this._events = {})
-  var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+  var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
   var store = this._events || (this._events = {})
 
   function iterate (events, map) {
@@ -144,7 +144,7 @@ EnhancedEmitter.prototype.off = EnhancedEmitter.prototype.removeListener = Enhan
     return map
   }
 
-  var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+  var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
 
   if (evs.length === 1 && argc === 1) {
     if (this._events[ev]) this._events[ev]._ = null
@@ -174,7 +174,7 @@ EnhancedEmitter.prototype.off = EnhancedEmitter.prototype.removeListener = Enhan
  */
 
 EnhancedEmitter.prototype.emit = function (ev, arg1, arg2) {
-  var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+  var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
   var fns = this._events ? traverse(evs, this._events) : []
   var a
 
@@ -223,7 +223,7 @@ EnhancedEmitter.prototype.emit = function (ev, arg1, arg2) {
 
 EnhancedEmitter.prototype.hasListener = function (ev, fn) {
   if (!this._events) return false
-  var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+  var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
   var fns = traverse(evs, this._events)
   if (fns.length === 0) return false
   return common.hasListener(fns, fn)
@@ -243,7 +243,7 @@ EnhancedEmitter.prototype.hasListener = function (ev, fn) {
 
 EnhancedEmitter.prototype.listeners = function (ev) {
   if (!this._events) return []
-  var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+  var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
   var fns = traverse(evs, this._events)
   return fns
 }

@@ -1,5 +1,6 @@
 import { error, __debug } from '@hyper/utils'
 import { define_getter, define_value } from '@hyper/utils'
+import { is_array } from '@hyper/utils'
 // import { random_id } from '@hyper/utils'
 import { h, s } from '@hyper/dom/hyper-hermes'
 import { doc, getElementById, isNode } from '@hyper/dom/dom-base'
@@ -100,7 +101,7 @@ export function new_ctx (G = global_ctx(), fn, ...args) {
 
   let mo, el = fn(ctx, ...args)
 
-  if (DEBUG && Array.isArray(el)) error(`this will assign a context to your element, so an array won't work. instead, wrap these elements in a container element`)
+  if (DEBUG && is_array(el)) error(`this will assign a context to your element, so an array won't work. instead, wrap these elements in a container element`)
   if (DEBUG && !isNode(el) && el != null && !el.then) error('you must return an element when creating a new context')
 
   if (el && el.then) {

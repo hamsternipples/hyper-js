@@ -16,27 +16,43 @@ export function __debug (msg) {
   else console.warn('continuing... (debug not enabled)')
 }
 
-// micro-optimization: http://jsperf.com/for-vs-foreach/292
-export function each (arr, fn, _this, i) {
-  for (i = 0; i < arr.length; ++i) fn.call(_this || arr, arr[i], i)
-}
-
-export function each_reverse (arr, fn, _this, i) {
-  for (i = arr.length - 1; i >= 0; i--) fn.call(_this || arr, arr[i], i)
-}
-
-export function call_each (arr, _this, i) {
-  for (i = 0; i < arr.length; ++i) arr[i].call(_this || arr)
-}
-
-export function obj_aliases (proto, aliases, k) {
-  for (k in aliases) proto[k] = proto[aliases[k]]
-}
-
 export const int = (s) => parseInt(s, 10)
 
-export const is_empty = (value) => (!value || typeof value !== 'object') ? !value : !Object.keys(value).length
+export const is_array = Array.isArray
+export const is_empty = (value) => (!value || typeof value !== 'object') ? !value : !(is_array(value) ? value : Object.keys(value)).length
 export const is_func = (fn) => typeof fn === 'function'
+
+
+// micro-optimization: http://jsperf.com/for-vs-foreach/292
+export function each (arr, fn, _this = arr, i) {
+  for (i = 0; i < arr.length; ++i) fn.call(_this, arr[i], i)
+}
+
+export function each_reverse (arr, fn, _this = arr, i) {
+  for (i = arr.length - 1; i >= 0; i--) fn.call(_this, arr[i], i)
+}
+
+export function call_each (arr, _this = arr, i) {
+  for (i = 0; i < arr.length; ++i) arr[i].call(_this)
+}
+
+export function concat (arr1, arr2) {
+  var l1 = arr1.length
+  var l2 = arr2.length
+  var res = empty_array(l1 + l2)
+  var i = 0, i2 = 0
+  for (; i < l1; i++) res[i] = arr1[i]
+  for (; i2 < l2; i2++) res[i + i2] = arr2[i2]
+  return res
+}
+
+export function empty_array (n, init_value = 0) {
+  var array = Array(n)
+  while (n-- > 0) array[n] = typeof init_value === 'function' ? init_value(n) : init_value
+  return array
+}
+
+export const array_idx = (len, idx) => idx < 0 ? len + idx : idx
 
 // same as lodash.compact, but does the compaction inline on the same array by resizing it
 export function compact (array) {
@@ -71,12 +87,12 @@ export function remove_every (array, value = null) {
 // lightweight version of flatten which only flattens 1 level deep.
 export function flatten (array) {
   let res = []
-  for (let v of array) Array.isArray(v) ? res.push(...v) : res.push(v)
+  for (let v of array) is_array(v) ? res.push(...v) : res.push(v)
   return res
 }
 
 export function ensure_array (value) {
-  return Array.isArray(value) ? value : [value]
+  return is_array(value) ? value : [value]
 }
 
 // unique array values using Set.
@@ -91,6 +107,9 @@ export function swap (o, to, from) {
   o[from] = t
 }
 
+export function obj_aliases (proto, aliases, k) {
+  for (k in aliases) proto[k] = proto[aliases[k]]
+}
 
 // `cb(obj, array[i])` gets called `array.length` times
 export function obj_apply (obj, array, cb) {
@@ -221,7 +240,7 @@ export function mergeDeepArray(target, ...sources) {
     for (key in source) {
       src_val = source[key]
       obj_val = target[key]
-      if (Array.isArray(src_val) || Array.isArray(obj_val)) {
+      if (is_array(src_val) || is_array(obj_val)) {
         target[key] = (obj_val || []).concat(src_val)
       } else if (is_obj(src_val)) {
         if (!obj_val) target[key] = {}
@@ -235,23 +254,13 @@ export function mergeDeepArray(target, ...sources) {
   return mergeDeep(target, ...sources)
 }
 
-export function empty_array (n, init_value = 0) {
-  var array = Array(n)
-  while (n-- > 0) array[n] = typeof init_value === 'function' ? init_value(n) : init_value
-  return array
-}
-
-export const array_idx = (len, idx) => idx < 0 ? len + idx : idx
-
 // left_pad((1234).toString(16), 20, '0')
 // > "000000000000000004d2"
 export const left_pad = (nr, n = 2, str = '0') => Array(n - (nr+'').length + 1).join(str) + nr
 
-export const which = (event) => (event = event || win.event).which === null ? event.button : event.which
-
 export const kind_of = (val) => val === null ? 'null'
   : typeof val !== 'object' ? typeof val
-  : Array.isArray(val) ? 'array'
+  : is_array(val) ? 'array'
   : {}.toString.call(val).slice(8, -1).toLowerCase()
 
 let next_ticks = []

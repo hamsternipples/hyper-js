@@ -7,7 +7,7 @@ var slice = [].slice
 import EventEmitter from '@hyper/drip/enhanced'
 
 // import { mergeDeep } from '@hyper/utils'
-import { extend, each } from '@hyper/utils'
+import { extend, each, is_array } from '@hyper/utils'
 
 class Ambition extends EventEmitter {
   constructor (id, options) {
@@ -177,7 +177,7 @@ class Ambition extends EventEmitter {
     }
     ;(typeof it === 'object' ?
       (it instanceof Promise ?
-        it : Array.isArray(it) ?
+        it : is_array(it) ?
           Promise.settle(it) : Promise.props(it)).then(next)
       : typeof it === 'function' ? Promise.try(it).then(next) : next())
   }

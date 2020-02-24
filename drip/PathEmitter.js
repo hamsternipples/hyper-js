@@ -1,6 +1,6 @@
 
 import common from './common'
-import concat from './concat'
+import { is_array, concat } from '@hyper/utils'
 
 export var PathEmitter = Base => class extends Base {
   setupEmitter (opts, _ctx) {
@@ -16,7 +16,7 @@ export var PathEmitter = Base => class extends Base {
 
   on (ev, fn) {
     var map = this._events || (this._events = {})
-    var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+    var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
     var store = this._events || (this._events = {})
 
     function iterate (events, map) {
@@ -93,7 +93,7 @@ export var PathEmitter = Base => class extends Base {
       return map
     }
 
-    var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+    var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
 
     if (evs.length === 1 && argc === 1) {
       if (this._events[ev]) this._events[ev]._ = null
@@ -123,7 +123,7 @@ export var PathEmitter = Base => class extends Base {
    */
 
   emit (ev, arg1, arg2) {
-    var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+    var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
     var fns = this._events ? traverse(evs, this._events) : []
     var a
 
@@ -172,7 +172,7 @@ export var PathEmitter = Base => class extends Base {
 
   hasListener (ev, fn) {
     if (!this._events) return false
-    var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+    var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
     var fns = traverse(evs, this._events)
     if (fns.length === 0) return false
     return common.hasListener(fns, fn)
@@ -192,7 +192,7 @@ export var PathEmitter = Base => class extends Base {
 
   listeners (ev) {
     if (!this._events) return []
-    var evs = Array.isArray(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
+    var evs = is_array(ev) ? ev.slice(0) : ev.split(this._drip.delimeter)
     var fns = traverse(evs, this._events)
     return fns
   }

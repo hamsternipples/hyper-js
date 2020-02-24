@@ -1,6 +1,8 @@
 import MixinEmitter from '@hyper/drip/MixinEmitter'
 import { value } from '@hyper/dom/observable'
-import { empty_array, extend, swap, define_prop, define_getter, error } from '@hyper/utils'
+import { empty_array, is_array } from '@hyper/utils'
+import { define_prop, define_getter } from '@hyper/utils'
+import { extend, swap, error } from '@hyper/utils'
 import isEqual from '@hyper/isEqual'
 // import invoke from '@hyper/lodash/invoke'
 // import set from '@hyper/lodash/set'
@@ -13,7 +15,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
     this.observable = 'array'
     this._up()
     define_prop(this, 'obv_len', define_getter(() => this._obv_len || (this._obv_len = value(this.length))))
-    if (Array.isArray(array) && array.length) super.push(...array)
+    if (is_array(array) && array.length) super.push(...array)
   }
 
   pop () {
@@ -92,7 +94,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   reset (items) {
     // this should be smarter. it should only do the differenc between this and items
     this.empty()
-    if (Array.isArray(items)) this.push(...items)
+    if (is_array(items)) this.push(...items)
     return this
   }
 

@@ -2,6 +2,7 @@
 // knicked from: https://github.com/kevincennis/TinyMusic
 // * added adjustable middleC
 
+import { is_array } from '@hyper/utils'
 import Note from './Note'
 
 class Sequence {
@@ -36,7 +37,7 @@ class Sequence {
   // accepts Note instances or strings (e.g. 'A4 e')
   notes (...notes) {
     for (var note of notes) {
-      if (Array.isArray(note)) this.notes(...note)
+      if (is_array(note)) this.notes(...note)
       else this._notes.push(note instanceof Note ? note : new Note(note, this.middleC))
     }
     return this

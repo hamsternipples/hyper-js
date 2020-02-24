@@ -8,8 +8,8 @@
 import { win, location, origin, base_path } from '@hyper/dom/dom-base'
 import { href_pathname, href_query, href_hash } from '@hyper/dom/dom-base'
 import { lookup_parent_with_attr } from '@hyper/dom/dom-base'
-import { on, off, prevent_default } from '@hyper/dom/dom-base'
-import { noop, slasher, which, error } from '@hyper/utils'
+import { on, off, prevent_default, which } from '@hyper/dom/dom-base'
+import { noop, slasher, is_array, error } from '@hyper/utils'
 import isEqual from '@hyper/isEqual'
 
 const QUERYPAIR_REGEX = /^([\w\-]+)(?:=([^&]*))?$/
@@ -124,7 +124,7 @@ class Route {
         const value = decodeURIComponent(match[2])
 
         if (query.hasOwnProperty(key)) {
-          if (!Array.isArray(query[key])) {
+          if (!is_array(query[key])) {
             query[key] = [ query[key] ]
           }
 

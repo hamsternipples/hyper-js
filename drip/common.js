@@ -1,5 +1,6 @@
 
 import concat from './concat'
+import { is_array } from '@hyper/utils'
 
 /**
  * ### .many (event, ttl, callback)
@@ -82,7 +83,7 @@ export function proxyEvent (ev, ns, target) {
     listen = !drip.delimeter
       ? (ns ? ns + ':' + ev : ev)
       : (ns
-        ? (Array.isArray(ns)
+        ? (is_array(ns)
           ? concat(ns, [ ev ])
           : concat(ns.split(drip.delimeter), [ ev ]))
         : ev)
@@ -97,7 +98,7 @@ export function unproxyEvent (ev, ns, target) {
     listen = !drip.delimeter
       ? (ns ? ns + ':' + ev : ev)
       : (ns
-        ? (Array.isArray(ns)
+        ? (is_array(ns)
           ? concat(ns, [ ev ])
           : concat(ns.split(drip.delimeter), [ ev ]))
         : ev)
@@ -122,7 +123,7 @@ export function unproxyEvent (ev, ns, target) {
 function eventProxy (ev, target) {
   var _drip = this._drip || (this._drip = {}),
     _memoize = _drip.memoize || (_drip.memoize = {}),
-    event = (_drip.delimeter && Array.isArray(ev))
+    event = (_drip.delimeter && is_array(ev))
       ? ev.join(_drip.delimeter)
       : ev,
     mem = _memoize[event],

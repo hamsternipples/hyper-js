@@ -1,5 +1,5 @@
 import { pluginBoilerplate } from '@hyper/plugins/plugin-boilerplate'
-import { error } from '@hyper/utils'
+import { error, is_array } from '@hyper/utils'
 
 function plugger (starting_panel, C = {}, D = {}) {
   const name = starting_panel.name
@@ -10,7 +10,7 @@ function plugger (starting_panel, C = {}, D = {}) {
     if (DEBUG) return starting_panel(args)
     else try {
       let el = starting_panel(args)
-      if (Array.isArray(el)) el = args.h('.plugger', el)
+      if (is_array(el)) el = args.h('.plugger', el)
       return el
     } catch (e) {
       console.error('error in plugin('+name+'):', e)

@@ -1,4 +1,4 @@
-import { pick, compact, isEmpty, stringify, parseJSON } from '@hyper/utils'
+import { pick, compact, is_array, isEmpty, stringify, parseJSON } from '@hyper/utils'
 
 export function pathVars (path) {
   let m = path.match(/\/:\w+/g)
@@ -64,7 +64,7 @@ export function parseQS (qs, keys) {
         v = decodeURIComponent(pair[1])
         if (k && v) {
           v = parseJSON(v)
-          if (Array.isArray(parsed[k])) {
+          if (is_array(parsed[k])) {
             parsed[k].push(v)
           } else if (parsed[k] === undefined) {
             parsed[k] = v

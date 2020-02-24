@@ -1,4 +1,4 @@
-import { error } from '@hyper/utils'
+import { error, is_array } from '@hyper/utils'
 
 // commonly used globals exported (to save a few bytes)
 export const win = window
@@ -23,6 +23,8 @@ export const isNode = (el) => el && el.nodeType
 export const isText = (el) => el && el.nodeType == 3
 export const getElementById = (el) => typeof el === 'string' ? doc.getElementById(el) : el
 
+export const which = (event) => (event = event || win.event).which === null ? event.button : event.which
+
 const anchor = cE('a')
 // export const parse_href = (href) => (anchor.href = href, anchor)
 export const href_pathname = (href) => (anchor.href = href, anchor.pathname)
@@ -32,7 +34,7 @@ export const href_hash = (href) => (anchor.href = href, anchor.hash.slice(1))
 export const get_prop_value = (obj, prop) => obj.getPropertyValue(prop)
 export const int_prop_value = (obj, prop) => int(obj.getPropertyValue(prop))
 export const sum_prop_values = (obj, props) => (
-  Array.isArray(props) ? props : props.split('|')
+  is_array(props) ? props : props.split('|')
 ).reduce((total, prop) => {
   return total + int_prop_value(obj, prop)
 }, 0)
