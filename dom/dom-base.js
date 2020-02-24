@@ -83,7 +83,7 @@ export function set_style (e, style, cleanupFuncs = []) {
       v = style[s]
       if (typeof v === 'function') {
         // observable
-        cleanupFuncs.push(v((v) => {
+        cleanupFuncs.z(v((v) => {
           e.style[s] = typeof v === 'number' && s !== 'opacity' ? v + 'px' : v
         }, 1))
       } else {

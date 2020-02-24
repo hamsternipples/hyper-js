@@ -46,6 +46,14 @@ export let common_tags = ['div']
 
 function hyper_hermes (create_element) {
   let cleanupFuncs = []
+  let z = (fn) => {
+    cleanupFuncs.push(
+      DEBUG && typeof fn !== 'function'
+      ? error('adding a non-function value to cleanupFuncs')
+      : fn
+    )
+    return fn
+  }
 
   function h(...args) {
     let e
@@ -97,7 +105,7 @@ function hyper_hermes (create_element) {
           l.then((v) => {
             let node = make_node(e, v, cleanupFuncs)
             if (DEBUG && r.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
-            else e.rC(node, r)
+            else e.rC(node, r), z(() => e.rm())
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
       } else if (typeof l === 'function') {
@@ -115,14 +123,7 @@ function hyper_hermes (create_element) {
   }
 
   h.x = cleanupFuncs
-  h.z = (fn) => {
-    cleanupFuncs.push(
-      DEBUG && typeof fn !== 'function'
-      ? error('adding a non-function value to cleanupFuncs')
-      : fn
-    )
-    return fn
-  }
+  h.z = cleanupFuncs.z = z
   h.cleanup = () => {
     for (let i = 0; i < cleanupFuncs.length; i++) {
       cleanupFuncs[i]()
@@ -182,7 +183,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
         // however, as mentioned in this article it may be desirable to use property access instead
         // https://stackoverflow.com/questions/22151560/what-is-happening-behind-setattribute-vs-attribute
         // observable (write-only) value
-        cleanupFuncs.push(v.call(e, (v) => {
+        cleanupFuncs.z(v.call(e, (v) => {
           set_attr(e, k, v, cleanupFuncs)
         }, 1)) // 1 = do_immediately
         s = e.nodeName
@@ -224,7 +225,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
         if (Array.isArray(v)) for (s of v) s && o.add(s)
         else if (typeof v === 'object')
           for (let s in v) is_obv(v[s])
-            ? cleanupFuncs.push(v[s]((v) => o.toggle(s, v), 1))
+            ? cleanupFuncs.z(v[s]((v) => o.toggle(s, v), 1))
             : o.toggle(s, v[s])
         else o.add(v)
       }
@@ -400,7 +401,7 @@ export function arrayFragment (e, arr, cleanupFuncs) {
     }
 
     arr.on('change', onchange)
-    cleanupFuncs.push(() => { arr.off('change', onchange) })
+    cleanupFuncs.z(() => { arr.off('change', onchange) })
   }
   return frag
 }
@@ -461,10 +462,13 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
       // observable
       e.aC(r = comment(DEBUG ? '3:obv-value' : 3))
       e.aC(placeholder = comment(DEBUG ? '4:obv-bottom' : 4))
-      cleanupFuncs.push(v((val) => {
+      cleanupFuncs.z(v((val) => {
         nn = make_node(e, val, cleanupFuncs)
         if (Array.isArray(r)) {
-          each(r, v => e.rm(v))
+          // @Bug: if the value is an array of promises, then they will never be cleaned up!
+          // eg. v([async_fn(),another_async_fn()])
+          // I have no idea how to fix this at all! perhaps promises should add a cleanup function when they append?!
+          each(r, v => e.rm())
         } else if (r) {
           if (DEBUG && r.parentNode !== e) error('obv unable to replace child node because parentNode has changed')
           else e.rC(nn, r)

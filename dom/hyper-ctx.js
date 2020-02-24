@@ -29,14 +29,7 @@ export function global_ctx () {
     },
     m: update_obv,
     V: obj_value,
-    z: (fn) => {
-      cleanupFuncs.push(
-        DEBUG && typeof fn !== 'function'
-        ? error('adding a non-function value to cleanupFuncs')
-        : fn
-      )
-      return fn
-    },
+    z: h.z,
   }, () => {
     // bind the global ctx to a meta tag in the head called 'global_ctx'
     return doc.head.aC(h('meta#global_ctx'))

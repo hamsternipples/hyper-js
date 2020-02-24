@@ -1,5 +1,5 @@
 
-import { error } from '@hyper/utils'
+import { error, each } from '@hyper/utils'
 import { is_obv, ensure_obv, bind2 } from '@hyper/dom/observable'
 import { on, off, dispatch_event, prevent_default } from '@hyper/dom/dom-base'
 
@@ -108,7 +108,7 @@ export function toggle (el, up_event, down_event) {
 
 export function add_event (cleanupFuncs, e, event, listener, opts) {
   on(e, event, listener, opts)
-  cleanupFuncs.push(() => { off(e, event, listener, opts) })
+  cleanupFuncs.z(() => { off(e, event, listener, opts) })
 }
 
 // https://www.html5rocks.com/en/mobile/touchandmouse/
@@ -148,56 +148,48 @@ export function observe_event (cleanupFuncs, el, observe_obj) {
   for (s in observe_obj) {
     v = observe_obj[s]
     // observable
-    switch (s) {
-      case 'input':
-        cleanupFuncs.push(attribute(el, observe_obj[s+'.attr'], observe_obj[s+'.on'])(v))
-        break
-      case 'hover':
-        cleanupFuncs.push(toggle(el, 'mouseover', 'mouseout')(v))
-        break
-      case 'touch':
-        cleanupFuncs.push(toggle(el, 'touchstart', 'touchend')(v))
-        break
-      case 'mousedown':
-        cleanupFuncs.push(toggle(el, 'mousedown', 'mouseup')(v))
-        break
-      case 'focus':
-        cleanupFuncs.push(toggle(el, 'focus', 'blur')(v))
-        break
-      case 'select_label':
-        s = select(el, 'label')
-        cleanupFuncs.push(
-          is_obv(v)
-            ? bind2(s, v)
-            : s(v)
+    if (s === 'boink') {
+      boink(cleanupFuncs, el, v)
+    }
+    else if (s === 'press') {
+      press(cleanupFuncs, el, v)
+    }
+    else if (s === 'input') {
+      cleanupFuncs.z(attribute(el, observe_obj[s+'.attr'], observe_obj[s+'.on'])(v))
+    }
+    else if (s === 'hover') {
+      cleanupFuncs.z(toggle(el, 'mouseover', 'mouseout')(v))
+    }
+    else if (s === 'touch') {
+      cleanupFuncs.z(toggle(el, 'touchstart', 'touchend')(v))
+    }
+    else if (s === 'mousedown') {
+      cleanupFuncs.z(toggle(el, 'mousedown', 'mouseup')(v))
+    }
+    else if (s === 'focus') {
+      cleanupFuncs.z(toggle(el, 'focus', 'blur')(v))
+    }
+    else if (s.slice(0, 'select'.length) === 'select') {
+      // 'select_value' 'select:value' (by value)
+      // 'select_label' 'select:label' (select the label)
+      s = select(el, s.slice('select'.length+1) || 'value')
+      cleanupFuncs.z(
+        is_obv(v)
+          ? bind2(s, v)
+          : s(v)
+      )
+    }
+    else {
+    // case 'keyup':
+    // case 'keydown':
+    // case 'touchstart':
+    // case 'touchend':
+      if (!~s.indexOf('.')) {
+        if (DEBUG && typeof v !== 'function') error('observer must be a function')
+        cleanupFuncs.z(
+          obv_event(el, observe_obj[s+'.attr'], (observe_obj[s+'.event'] || s), observe_obj[s+'.valid'])(v)
         )
-        break
-      case 'select': // default setter: by value
-      case 'select_value':
-        s = select(el)
-        cleanupFuncs.push(
-          is_obv(v)
-            ? bind2(s, v)
-            : s(v)
-        )
-        break
-      case 'boink':
-        boink(cleanupFuncs, el, v)
-        break
-      case 'press':
-        press(cleanupFuncs, el, v)
-        break
-      default:
-      // case 'keyup':
-      // case 'keydown':
-      // case 'touchstart':
-      // case 'touchend':
-        if (!~s.indexOf('.')) {
-          if (typeof v !== 'function') error('observer must be a function')
-          // if (s === 'edit') debugger
-          cleanupFuncs.push(obv_event(el, observe_obj[s+'.attr'], (observe_obj[s+'.event'] || s), observe_obj[s+'.valid'])(v))
-          // if (s === 'edit') debugger
-        }
+      }
     }
   }
 }
