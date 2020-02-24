@@ -105,7 +105,7 @@ function hyper_hermes (create_element) {
           l.then((v) => {
             let node = make_node(e, v, cleanupFuncs)
             if (DEBUG && r.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
-            else e.rC(node, r), z(() => e.rm())
+            else e.rC(node, r), z(() => node.rm())
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
       } else if (typeof l === 'function') {
@@ -450,7 +450,7 @@ export function make_node (e, v, cleanupFuncs, placeholder) {
     : typeof v.then === 'function' ? (v.then((v) => {
       let node = make_node(e, v, cleanupFuncs)
       if (DEBUG && placeholder.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
-      else e.rC(node, placeholder)
+      else e.rC(node, placeholder), cleanupFuncs.z(() => node.rm())
     }), placeholder = comment(DEBUG ? '2:promise-value' : 2))
     : txt(v)
 }
