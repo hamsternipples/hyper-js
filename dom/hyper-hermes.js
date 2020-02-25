@@ -143,7 +143,9 @@ export let custom_attrs = {
   hover: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {hover: fn}) },
   focused: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {focus: fn}) },
   selected: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {select: fn}) },
+  checked: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {select: fn}) }, // duplicate of selected
   input: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {input: fn}) },
+  value: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {input: fn}) }, // duplicate of input
   go: (cleanupFuncs, e, url, roadtrip) => {
     // call on next_tick, to make sure the element is added to the dom.
     next_tick(() => {
@@ -187,8 +189,9 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
           set_attr(e, k, v, cleanupFuncs)
         }, 1)) // 1 = do_immediately
         s = e.nodeName
-        if (s === "INPUT") observe_event(cleanupFuncs, e, {input: v})
-        if (s === "SELECT") observe_event(cleanupFuncs, e, k === 'label' ? {select_label: v} : {select: v})
+        if (s === 'INPUT') observe_event(cleanupFuncs, e, {input: v})
+        if (s === 'SELECT') observe_event(cleanupFuncs, e, k === 'label' ? {select_label: v} : {select: v})
+        if (s === 'TEXTAREA') observe_event(cleanupFuncs, e, {value: v})
       }
     })
   } else {
@@ -198,7 +201,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
     } else if (k === 'data') {
       if (typeof v === 'object')
         for(s in v) e.dataset[s] = v[s]
-      else error('data property should be passed as an object')
+      else if (DEBUG) error('data property should be passed as an object')
     } else if (k === 'multiple') {
       e.multiple = !!v
     } else if (k === 'contenteditable') {
@@ -212,9 +215,9 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
         e.setSelectionRange.apply(e, range)
       })
     } else if (k === 'selected') {
-      e.defaultSelected = !!v
+      e.defaultSelected = e.selected = !!v
     } else if (k === 'checked') {
-      e.defaultChecked = !!v
+      e.defaultChecked = e.checked = !!v
     } else if (k === 'value') {
       e.defaultValue = e.value = v
     } else if (k === 'for') {

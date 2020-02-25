@@ -173,9 +173,9 @@ export function observe_event (cleanupFuncs, el, observe_obj) {
       cleanupFuncs.z(toggle(el, 'focus', 'blur')(v))
     }
     else if (s.slice(0, 'select'.length) === 'select') {
-      // 'select_value' 'select:value' (by value)
-      // 'select_label' 'select:label' (select the label)
-      s = select(el, s.slice('select'.length+1) || 'value')
+      // 'select_value' or 'select:value' (by value)
+      // 'select_label' or 'select:label' (select the label)
+      s = select(el, s.slice('select'.length + 1) || 'value')
       cleanupFuncs.z(
         is_obv(v)
           ? bind2(s, v)
