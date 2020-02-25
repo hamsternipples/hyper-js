@@ -76,30 +76,6 @@ export function lookup_parent_with_attr (el, attr, filter) {
   return el
 }
 
-export function set_style (e, style, cleanupFuncs = []) {
-  if (typeof style === 'object') {
-    // loaving this commented; need to make sure the scope for s is preserved. js is kinda funny sometimes.
-    // for (let s in style) ((s, v) => {
-    let v, s
-    for (s in style) {
-      v = style[s]
-      if (typeof v === 'function') {
-        // observable
-        cleanupFuncs.z(v((v) => {
-          e.style[s] = typeof v === 'number' && s !== 'opacity' ? v + 'px' : v
-        }, 1))
-      } else {
-        // this is to make positioning elements a whole lot easier.
-        // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
-        e.style[s] = typeof v === 'number' && s !== 'opacity' ? v + 'px' : v
-      }
-    }
-    // })(s, style[s])
-  } else {
-    e.setAttribute('style', style)
-  }
-}
-
 // by default, for performeance reasons, only passive events are used.
 // if preventDefault is called, chrome will spit out an error.
 // if you want non-passive, simply pass your own opts: eg.

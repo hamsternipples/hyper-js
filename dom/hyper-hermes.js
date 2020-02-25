@@ -10,11 +10,12 @@
 import { is_obv } from './observable'
 import { observe_event, add_event } from './observable-event'
 import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/utils'
-import { each, is_array } from '@hyper/utils'
+import { each, every } from '@hyper/utils'
+import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
 
 import { win, doc, customElements } from './dom-base'
-import { isNode, txt, comment, cE, set_style } from './dom-base'
+import { isNode, txt, comment, cE } from './dom-base'
 import { lookup_parent_with_attr } from './dom-base'
 import { Node_prototype } from './dom-base'
 
@@ -48,7 +49,7 @@ function hyper_hermes (create_element) {
   let cleanupFuncs = []
   let z = (fn) => {
     cleanupFuncs.push(
-      DEBUG && typeof fn !== 'function'
+      DEBUG && !is_fn(fn)
       ? error('adding a non-function value to cleanupFuncs')
       : fn
     )
@@ -78,19 +79,19 @@ function hyper_hermes (create_element) {
         })
       }
 
-      if (!e && typeof l === 'number' && l < common_tags.length)
+      if (!e && is_num(l) && l < common_tags.length)
         // we overwrite 'l', so it does not try and add a text node of its number to the element
         l = parse_selector(common_tags[l])
 
       if (l != null)
-      if (typeof l === 'string') {
+      if (is_str(l)) {
         if (!e) {
           parse_selector(l)
         } else {
           e.aC(txt(l))
         }
-      } else if (typeof l === 'number'
-        || typeof l === 'boolean'
+      } else if (is_num(l)
+        || is_bool(l)
         || l instanceof Date
         || l instanceof RegExp ) {
           e.aC(txt(l.toString()))
@@ -98,9 +99,9 @@ function hyper_hermes (create_element) {
         e.aC(l, cleanupFuncs)
       } else if (isNode(l) || l instanceof win.Text) {
         e.aC(l)
-      } else if (typeof l === 'object') {
+      } else if (is_obj(l)) {
         // is a promise
-        if (typeof l.then === 'function') {
+        if (is_fn(l.then)) {
           e.aC(r = comment(DEBUG ? '1:promise-value' : 1))
           l.then((v) => {
             let node = make_node(e, v, cleanupFuncs)
@@ -108,7 +109,7 @@ function hyper_hermes (create_element) {
             else e.rC(node, r), z(() => node.rm())
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
-      } else if (typeof l === 'function') {
+      } else if (is_fn(l)) {
         make_obv_node(e, l, cleanupFuncs)
       } else if (DEBUG) {
         error('unknown/unsupported item being appended to element')
@@ -124,11 +125,7 @@ function hyper_hermes (create_element) {
 
   h.x = cleanupFuncs
   h.z = cleanupFuncs.z = z
-  h.cleanup = () => {
-    for (let i = 0; i < cleanupFuncs.length; i++) {
-      cleanupFuncs[i]()
-    }
-  }
+  h.cleanup = () => { call_each(cleanupFuncs) }
 
   return h
 }
@@ -162,7 +159,7 @@ export let custom_attrs = {
           }
         }
 
-        roadtrip.goto(typeof url === 'function' ? url() : url)
+        roadtrip.goto(is_fn(url) ? url() : url)
       }})
     })
   }
@@ -171,9 +168,9 @@ export let custom_attrs = {
 export function set_attr (e, key_, v, cleanupFuncs = []) {
   // convert short attributes to long versions. s -> style, c -> className
   var s, o, i, k = short_attrs[key_] || key_
-  if (typeof v === 'function') {
+  if (is_fn(v)) {
     next_tick(() => {
-      if (typeof(o = custom_attrs[k]) === 'function') {
+      if (is_fn(o = custom_attrs[k])) {
         o(cleanupFuncs, e, v)
       } else if (k.substr(0, 2) === 'on') {
         add_event(cleanupFuncs, e, k.substr(2), v, false)
@@ -199,7 +196,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
       // for(s in v) e[s] = v[s]
       Object.assign(e, v)
     } else if (k === 'data') {
-      if (typeof v === 'object')
+      if (is_obj(v))
         for(s in v) e.dataset[s] = v[s]
       else if (DEBUG) error('data property should be passed as an object')
     } else if (k === 'multiple') {
@@ -225,21 +222,24 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
     } else if (k === 'class') {
       if (v) {
         o = e.classList
-        if (is_array(v)) for (s of v) s && o.add(s)
-        else if (typeof v === 'object')
-          for (let s in v) is_obv(v[s])
-            ? cleanupFuncs.z(v[s]((v) => o.toggle(s, v), 1))
-            : o.toggle(s, v[s])
+        if (is_array(v)) each(v, s => s && o.add(s))
+        else if (is_obj(v))
+          every(v, val => {
+            is_obv(val)
+            ? cleanupFuncs.z(val((v) => o.toggle(s, v), 1))
+            : o.toggle(s, val)
+          })
         else o.add(v)
       }
     } else if ((i  = (k === 'on')) || k === 'before') {
       // 'before' is used to denote the capture phase of event propagation
       // see: http://stackoverflow.com/a/10654134 to understand the capture / bubble phases
       // before: {click: (do) => something}
-      if (typeof v === 'object') {
+      if (is_obj(v)) {
         for (s in v)
-          if (typeof (o = v[s]) === 'function')
+          if (is_fn(o = v[s]))
             add_event(cleanupFuncs, e, s, o, i ? false : true)
+          else if (DEBUG) error('unknown event listener')
       }
     } else if (k === 'html') {
       e.innerHTML = v
@@ -249,7 +249,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
       // so, likely I'll want to move the whole thing out to a function which is called sometimes w/ set-timeout and sometimes not.
       next_tick(() => observe_event(cleanupFuncs, e, v))
     } else if (k === 'style') {
-      if (typeof v === 'string') {
+      if (is_str(v)) {
         e.style.cssText = v
       } else {
         set_style(e, v, cleanupFuncs)
@@ -258,7 +258,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
       // in weird cases with stuff like data- or other attrs containing hyphens, use setAttribute
       e.setAttribute(k, v)
     } else if (v !== undefined) {
-      if (typeof(o = custom_attrs[k]) === 'function') {
+      if (is_fn(o = custom_attrs[k])) {
         o(cleanupFuncs, e, v)
       } else if (~(i = k.indexOf(':'))) {
         // for namespaced attributes, such as xlink:href
@@ -413,7 +413,11 @@ export var special_elements = {}
 define_prop(special_elements, 'define', define_value((name, fn, args) => {
   // if (DEBUG) console.log('defining', name, args)
   customElements.define(name, fn)
-  special_elements[name] = typeof args === 'number' ? args : is_array(args) ? args.length : fn.length || 0
+  special_elements[name] = is_num(args)
+    ? args
+    : is_array(args)
+      ? args.length
+      : (fn.length || 0)
 }))
 
 export var h = new_dom_context(1)
@@ -443,14 +447,14 @@ export function new_svg_context (no_cleanup) {
 export function make_node (e, v, cleanupFuncs, placeholder) {
   return isNode(v) ? v
     : is_array(v) ? arrayFragment(e, v, cleanupFuncs)
-    : typeof v === 'function' ? (
+    : is_fn(v) ? (
       is_obv(v) ? make_obv_node(e, v, cleanupFuncs) : (() => {
-        while (typeof v === 'function') v = v.call(e, e)
+        while (is_fn(v)) v = v.call(e, e)
         return make_node(e, v, cleanupFuncs)
       })()
     )
     : v == null ? comment(DEBUG ? '0:null' : 0)
-    : typeof v.then === 'function' ? (v.then((v) => {
+    : is_fn(v.then) ? (v.then((v) => {
       let node = make_node(e, v, cleanupFuncs)
       if (DEBUG && placeholder.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
       else e.rC(node, placeholder), cleanupFuncs.z(() => node.rm())
@@ -460,7 +464,7 @@ export function make_node (e, v, cleanupFuncs, placeholder) {
 
 export function make_obv_node (e, v, cleanupFuncs = []) {
   var r, o, nn, clean = [], placeholder
-  if (typeof v === 'function') {
+  if (is_fn(v)) {
     if (is_obv(v)) {
       // observable
       e.aC(r = comment(DEBUG ? '3:obv-value' : 3))
@@ -512,16 +516,45 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
   return r
 }
 
-// shortcut to append multiple children (w/ cleanupFuncs)
-Node_prototype.iB = function (el, ref, cleanupFuncs) { return this.insertBefore(make_obv_node(this, el, cleanupFuncs), ref) }
-// shortcut to append multiple children (w/ cleanupFuncs)
-Node_prototype.aC = function (el, cleanupFuncs) { return this.appendChild(isNode(el) ? (el.parentNode !== this ? el : undefined) : make_obv_node(this, el, cleanupFuncs)) }
-// shortcut to replaceChild
-Node_prototype.rC = function (new_child, old_child) { return this.replaceChild(new_child, old_child) }
-// shortcut to apply attributes as if they were the second argument to `h('.lala', {these ones}, ...)`
-Node_prototype.apply = function (obj, cleanupFuncs) {
-  for (let k in obj) set_attr(this, k, obj[k], cleanupFuncs)
+export function set_style (e, style, cleanupFuncs = []) {
+  if (is_obj(style)) {
+    every(style, (val, k, setter) => {
+      // this is to make positioning elements a whole lot easier.
+      // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
+      setter = (v) => { e.style[k] = is_num(v) && k !== 'opacity' ? v + 'px' : v }
+      if (is_obv(val)) {
+        cleanupFuncs.push(val(setter, 1))
+      } else {
+        if (DEBUG && !is_str(val) && !is_num(val)) error('unknown value for style: '+k)
+        else setter(val)
+      }
+    // }
+    })
+  } else {
+    e.setAttribute('style', style)
+  }
 }
+
+// shortcut to append multiple children (w/ cleanupFuncs)
+Node_prototype.iB = function (el, ref, cleanupFuncs) {
+  return this.insertBefore(make_obv_node(this, el, cleanupFuncs), ref)
+}
+
+// shortcut to append multiple children (w/ cleanupFuncs)
+Node_prototype.aC = function (el, cleanupFuncs) {
+  return this.appendChild(isNode(el) ? (el.parentNode !== this ? el : undefined) : make_obv_node(this, el, cleanupFuncs))
+}
+
+// shortcut to replaceChild
+Node_prototype.rC = function (new_child, old_child) {
+  return this.replaceChild(new_child, old_child)
+}
+
+// shortcut to apply attributes as if they were the second argument to `h('.lala', {these ones}, ...)`
+Node_prototype.set = function (obj, cleanupFuncs) {
+  every(obj, (v, k) => set_attr(this, k, v, cleanupFuncs))
+}
+
 // https://jsperf.com/remove-all-child-nodes/2.atom
 Node_prototype.empty = function (child) {
   while (child = this.firstChild) this.removeChild(child)

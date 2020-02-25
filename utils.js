@@ -1,7 +1,7 @@
 
 // Cleanup: this imports a whole bunch of stuff.
 //          perhaps think about something maybe a little lighter.
-import is_obj from './lodash/isObject'
+import obj_like from './lodash/isObject'
 
 export function noop () {}
 
@@ -20,7 +20,21 @@ export const int = (s) => parseInt(s, 10)
 
 export const is_array = Array.isArray
 export const is_empty = (value) => (!value || typeof value !== 'object') ? !value : !(is_array(value) ? value : Object.keys(value)).length
-export const is_func = (fn) => typeof fn === 'function'
+
+export const is_fn = (fn) => typeof fn === 'function'
+export { is_fn as is_func, is_fn as is_function }
+
+export const is_obj = (obj) => typeof obj === 'object'
+export { is_obj as is_object }
+
+export const is_str = (str) => typeof str === 'string'
+export { is_str as is_string }
+
+export const is_num = (num) => typeof num === 'number'
+export { is_num as is_number }
+
+export const is_bool = (bool) => typeof bool === 'boolean'
+export { is_bool as is_boolean }
 
 
 // micro-optimization: http://jsperf.com/for-vs-foreach/292
@@ -34,6 +48,10 @@ export function each_reverse (arr, fn, _this = arr, i) {
 
 export function call_each (arr, _this = arr, i) {
   for (i = 0; i < arr.length; ++i) arr[i].call(_this)
+}
+
+export function every (obj, fn, _this = obj, k) {
+  for (k in obj) fn.call(_this, obj[k], k)
 }
 
 export function concat (arr1, arr2) {
@@ -217,9 +235,9 @@ export function mergeDeep(target, ...sources) {
   if (!sources.length) return target
   var key, src_obj, source = sources.shift()
 
-  if (is_obj(target) && is_obj(source)) {
+  if (obj_like(target) && obj_like(source)) {
     for (key in source) {
-      if (is_obj(src_obj = source[key])) {
+      if (obj_like(src_obj = source[key])) {
         if (!target[key]) target[key] = {}
         mergeDeep(target[key], src_obj)
       } else {
@@ -233,16 +251,16 @@ export function mergeDeep(target, ...sources) {
 
 // same as above, but also concats arrays
 export function mergeDeepArray(target, ...sources) {
-  if (!sources.length || !is_obj(target)) return target
+  if (!sources.length || !obj_like(target)) return target
   var key, src_val, obj_val, source
 
-  if (is_obj(source = sources.shift())) {
+  if (obj_like(source = sources.shift())) {
     for (key in source) {
       src_val = source[key]
       obj_val = target[key]
       if (is_array(src_val) || is_array(obj_val)) {
         target[key] = (obj_val || []).concat(src_val)
-      } else if (is_obj(src_val)) {
+      } else if (obj_like(src_val)) {
         if (!obj_val) target[key] = {}
         mergeDeep(obj_val, src_val)
       } else {
