@@ -39,15 +39,14 @@ function nlElastic (node, keypath, padding = 24) {
 
   if (IS_RACTIVE) var ractive = Ractive.getNodeInfo(node).ractive
   var mirrorInitStyle =
-    'position: absolute; top: -999px; right: auto; bottom: auto;' +
-    'left: 0; overflow: hidden; box-sizing: content-box;' +
+    'position:absolute;top:-999px;right:auto;bottom:auto;' +
+    'left:0;overflow:hidden;box-sizing:content-box;' +
     (SUPPORT_ANCIENT
-    ? '-webkit-box-sizing: content-box; -moz-box-sizing: content-box;' : '') +
-    'min-height: 0 !important; height: 0 !important; padding: 0;' +
-    'word-wrap: break-word; border: 0;'
+    ? '-webkit-box-sizing:content-box;-moz-box-sizing:content-box;' :'') +
+    'min-height:0 !important;height:0 !important;padding:0;' +
+    'word-wrap:break-word;border:0'
 
   var taStyle = getComputedStyle(ta)
-  var resize = get_prop_value(taStyle, 'resize')
   var borderBox = get_prop_value(taStyle, 'box-sizing') === 'border-box' || (SUPPORT_ANCIENT && (
       get_prop_value(taStyle, '-moz-box-sizing') === 'border-box' ||
       get_prop_value(taStyle, '-webkit-box-sizing') === 'border-box'))
@@ -63,7 +62,7 @@ function nlElastic (node, keypath, padding = 24) {
   var mirrored, active, mirror
 
   if (SUPPORT_ANCIENT) {
-      // Opera returns max-height of -1 if not set
+    // Opera returns max-height of -1 if not set
     maxHeight = maxHeight && maxHeight > 0 ? maxHeight : 9e4
   }
 
@@ -75,8 +74,6 @@ function nlElastic (node, keypath, padding = 24) {
     data: { elastic: true },
   }))
 
-  // set resize and apply elastic
-  $ta.style.resize =  (resize === 'none' || resize === 'vertical') ? 'none' : 'horizontal'
   $ta.dataset.elastic = true
 
   /*
@@ -106,7 +103,7 @@ function nlElastic (node, keypath, padding = 24) {
     if (!active) {
       // @Performance: all of this reading and writing of values likely causes many layout recalcs.
       // probably want to do it in an animation frame or something... eg. read it all, then set it in raf
-      var taHeight = ta.style.height === '' ? 'auto' : int(ta.style.height)
+      var taHeight = ta.style.height ? int(ta.style.height) : 0
       var taComputedStyleWidth = get_prop_value(getComputedStyle(ta), 'width')
       var mirrorHeight, width, overflow
       active = true
@@ -132,7 +129,7 @@ function nlElastic (node, keypath, padding = 24) {
       mirrorHeight += boxOuter.height + 24
       ta.style.overflowY = overflow || 'hidden'
 
-      if (taHeight !== mirrorHeight) {
+      if (taHeight < mirrorHeight) {
         ta.style.height = mirrorHeight + 'px'
         if (IS_RACTIVE) raf(() => ractive.fire('elastic:resize', $ta))
       }
