@@ -7,6 +7,7 @@ import { on, off, dispatch_event, prevent_default } from '@hyper/dom/dom-base'
 // listen to any event, reading `attr` and calling `listener` with the value.
 // `attr` can also be a function which can be used to transform the value passed to listener.
 export function listen (element, event, attr, listener, do_immediately, opts) {
+  if (DEBUG && typeof listener !== 'function') error(`listener isn't a function`)
   let on_event = (e) => { listener(typeof attr === 'function' ? attr(e) : attr ? element[attr] : e) }
   on(element, event, on_event, opts)
   do_immediately && attr && on_event()
@@ -55,8 +56,10 @@ export function attribute (element, attr = 'value', event = 'input') {
   function observable (val, do_immediately) {
     return (
       val === undefined ? element[attr]
-    : typeof val !== 'function' ? dispatch_event(element, event, element[attr] = val)
-    : listen(element, event, attr, val, do_immediately)
+    : typeof val !== 'function' ?
+        dispatch_event(element, event, element[attr] = val)
+    : (is_obv(val) && val(observable), // 2-way bindings
+        listen(element, event, attr, val, do_immediately))
     )
   }
 }
@@ -154,7 +157,7 @@ export function observe_event (cleanupFuncs, el, observe_obj) {
     else if (s === 'press') {
       press(cleanupFuncs, el, v)
     }
-    else if (s === 'input') {
+    else if (s === 'input' || s === 'value') {
       cleanupFuncs.z(attribute(el, observe_obj[s+'.attr'], observe_obj[s+'.on'])(v))
     }
     else if (s === 'hover') {
