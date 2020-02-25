@@ -438,7 +438,7 @@ export function new_svg_context (no_cleanup) {
 }
 
 export function make_node (e, v, cleanupFuncs, placeholder) {
-  return  isNode(v) ? v
+  return isNode(v) ? v
     : is_array(v) ? arrayFragment(e, v, cleanupFuncs)
     : typeof v === 'function' ? (
       is_obv(v) ? make_obv_node(e, v, cleanupFuncs) : (() => {
@@ -465,18 +465,38 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
       cleanupFuncs.z(v((val) => {
         nn = make_node(e, val, cleanupFuncs)
         if (is_array(r)) {
-          // @Bug: if the value is an array of promises, then they will never be cleaned up!
-          // eg. v([async_fn(),another_async_fn()])
-          // I have no idea how to fix this at all! perhaps promises should add a cleanup function when they append?!
-          each(r, v => e.rm())
+          each(r, v => {
+            // this removes all previous elements in the array before adding them below with the insertBefore
+            if (v) {
+              if (v.then) v.then(e => e.rm())
+              else if (isNode(v)) v.rm()
+              else if (DEBUG) error('element in removal array is not a node')
+            } else if (DEBUG) error('somehow a null value got saved into the removal array')
+          })
+          // each(r, v => e.rm())
         } else if (r) {
           if (DEBUG && r.parentNode !== e) error('obv unable to replace child node because parentNode has changed')
           else e.rC(nn, r)
         }
 
         e.iB(nn, placeholder)
-        r = is_array(val) ? val : nn
-      }), () => (placeholder.rm(), r && is_array(r) ? each(r, r => r.rm()) : r.rm()))
+        /*
+        not totally sure this is working. I'm trying to save the resulting element back into the array that's used for removal. for example, imagine that I have a string or a number and I add it the dom, when I go to remove them, it won't know what elements they were.
+        similarly, for promises, once they resolve, it should set the element in the array with the resolved node.
+                     -kenny 2020-02-25
+        */
+        r = is_array(val)
+          ? (each(val, (v, i) => {
+            if (v != null) {
+              if (v.then) {
+                v.then(v => val[i] = v)
+              } else if (!isNode(v)) {
+                val[i] = nn.childNodes[i]
+              } else if (DEBUG) error('uhh???')
+            }
+          }), val)
+          : nn
+      }), /* cleanup fn -> */ () => (placeholder.rm(), r && is_array(r) ? each(r, r => r.rm()) : r.rm()))
     } else {
       // normal function
       o = make_node(e, v, cleanupFuncs)
