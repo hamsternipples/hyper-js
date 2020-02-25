@@ -9,14 +9,21 @@ import raf from '@hyper/dom/request-animation-frame'
 import h from '@hyper/dom/hyper-hermes'
 
 function nlElastic (node, keypath, padding = 24) {
-  let ta = node
-  let $ta = node
+  var ta = node
+  var $ta = node
 
-  // exit if elastic already applied (or is the mirror element)
-  if ($ta.dataset.elastic) return
+  // if elastic already applied (or is the mirror element)
+  // if Ractive, then just exit.
+  if (IS_RACTIVE && $ta.dataset.elastic) return
+  // modern platforms should error
+  if (DEBUG && $ta.dataset.elastic) error('this is already an elastic textarea')
 
   // ensure the element is a textarea, and browser is capable
-  if (ta.nodeName !== 'TEXTAREA' || (SUPPORT_ANCIENT && !getComputedStyle)) return
+  // if Ractive, just exit, cause it's a programmer error or an old browser
+  if (IS_RACTIVE && ta.nodeName !== 'TEXTAREA' || (SUPPORT_ANCIENT && !getComputedStyle)) return
+  // modern platforms will error
+  if (DEBUG && ta.nodeName !== 'TEXTAREA') error('node is not a textarea')
+  if (DEBUG && (SUPPORT_ANCIENT && !getComputedStyle)) error('getComputedStyle not supported on this platform')
 
   // set these properties before measuring dimensions
   assign($ta.style, {
@@ -31,27 +38,29 @@ function nlElastic (node, keypath, padding = 24) {
   ta.value = text
 
   if (IS_RACTIVE) var ractive = Ractive.getNodeInfo(node).ractive
-  let mirrorInitStyle = 'position: absolute; top: -999px; right: auto; bottom: auto;' +
-      'left: 0; overflow: hidden; box-sizing: content-box;' +
-      (SUPPORT_ANCIENT ? '-webkit-box-sizing: content-box; -moz-box-sizing: content-box;') +
-      'min-height: 0 !important; height: 0 !important; padding: 0;' +
-      'word-wrap: break-word; border: 0;'
+  var mirrorInitStyle =
+    'position: absolute; top: -999px; right: auto; bottom: auto;' +
+    'left: 0; overflow: hidden; box-sizing: content-box;' +
+    (SUPPORT_ANCIENT
+    ? '-webkit-box-sizing: content-box; -moz-box-sizing: content-box;' : '') +
+    'min-height: 0 !important; height: 0 !important; padding: 0;' +
+    'word-wrap: break-word; border: 0;'
 
-  let taStyle = getComputedStyle(ta)
-  let resize = get_prop_value(taStyle, 'resize')
-  let borderBox = get_prop_value(taStyle, 'box-sizing') === 'border-box' || (SUPPORT_ANCIENT && (
+  var taStyle = getComputedStyle(ta)
+  var resize = get_prop_value(taStyle, 'resize')
+  var borderBox = get_prop_value(taStyle, 'box-sizing') === 'border-box' || (SUPPORT_ANCIENT && (
       get_prop_value(taStyle, '-moz-box-sizing') === 'border-box' ||
       get_prop_value(taStyle, '-webkit-box-sizing') === 'border-box'))
-  let boxOuter = !borderBox ? {width: 0, height: 0} : {
+  var boxOuter = !borderBox ? {width: 0, height: 0} : {
     width: sum_prop_values(taStyle, 'border-right-width|padding-right|padding-left|border-left-width'),
     height: sum_prop_values(taStyle, 'border-top-width|padding-top|padding-bottom|border-bottom-width'),
   }
-  let minHeightValue = int_prop_value(taStyle, 'min-height')
-  let heightValue = int_prop_value(taStyle, 'height')
-  let minHeight = Math.max(minHeightValue, heightValue) - boxOuter.height
-  let maxHeight = int_prop_value(taStyle, 'max-height')
-  let copyStyle = 'font-family|font-size|font-weight|font-style|letter-spacing|line-height|text-transform|word-spacing|text-indent'.split('|')
-  let mirrored, active, mirror
+  var minHeightValue = int_prop_value(taStyle, 'min-height')
+  var heightValue = int_prop_value(taStyle, 'height')
+  var minHeight = Math.max(minHeightValue, heightValue) - boxOuter.height
+  var maxHeight = int_prop_value(taStyle, 'max-height')
+  var copyStyle = 'font-family|font-size|font-weight|font-style|letter-spacing|line-height|text-transform|word-spacing|text-indent'.split('|')
+  var mirrored, active, mirror
 
   if (SUPPORT_ANCIENT) {
       // Opera returns max-height of -1 if not set
@@ -75,7 +84,7 @@ function nlElastic (node, keypath, padding = 24) {
    */
 
   function initMirror () {
-    let mirrorStyle = mirrorInitStyle
+    var mirrorStyle = mirrorInitStyle
 
     mirrored = ta
     // copy the essential styles from the textarea to the mirror
@@ -97,9 +106,9 @@ function nlElastic (node, keypath, padding = 24) {
     if (!active) {
       // @Performance: all of this reading and writing of values likely causes many layout recalcs.
       // probably want to do it in an animation frame or something... eg. read it all, then set it in raf
-      let taHeight = ta.style.height === '' ? 'auto' : int(ta.style.height)
-      let taComputedStyleWidth = get_prop_value(getComputedStyle(ta), 'width')
-      let mirrorHeight, width, overflow
+      var taHeight = ta.style.height === '' ? 'auto' : int(ta.style.height)
+      var taComputedStyleWidth = get_prop_value(getComputedStyle(ta), 'width')
+      var mirrorHeight, width, overflow
       active = true
 
       mirror.value = ta.value // optional whitespace to improve animation
@@ -143,14 +152,14 @@ function nlElastic (node, keypath, padding = 24) {
    */
 
   // listen
-  if (SUPPORT_ANCIENT 'onpropertychange' in ta && 'oninput' in ta) {
+  if (SUPPORT_ANCIENT && 'onpropertychange' in ta && 'oninput' in ta) {
     // IE9
     ta['oninput'] = ta.onkeyup = adjust
   } else {
     ta['oninput'] = adjust
   }
 
-  on('resize', forceAdjust)
+  on(ta, 'resize', forceAdjust)
 
   if (IS_RACTIVE) {
     if (keypath) ractive.observe(keypath, function (v) {
@@ -165,7 +174,7 @@ function nlElastic (node, keypath, padding = 24) {
 
   next_tick(adjust)
 
-  let teardown = () => {
+  var teardown = () => {
     mirror.rm()
     off('resize', forceAdjust)
   }
