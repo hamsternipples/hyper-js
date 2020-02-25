@@ -1,4 +1,4 @@
-import { error, is_array } from '@hyper/utils'
+import { error, is_array, int } from '@hyper/utils'
 
 // commonly used globals exported (to save a few bytes)
 export const win = window
