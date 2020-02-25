@@ -1,4 +1,4 @@
-'use strict'
+import { doc, doc_el, body, win, bounding_rect } from '@hyper/dom/dom-base'
 
 import CropAreaCircle from './crop-area-circle'
 import CropAreaSquare from './crop-area-square'
@@ -6,16 +6,13 @@ import EXIF from './crop-exif'
 
 // Get Element's Offset
 var getElementOffset = function (elem) {
-  var box = elem.getBoundingClientRect()
+  var box = bounding_rect(elem)
 
-  var body = document.body
-  var docElem = document.documentElement
+  var scrollTop = win.pageYOffset || doc_el.scrollTop || body.scrollTop
+  var scrollLeft = win.pageXOffset || doc_el.scrollLeft || body.scrollLeft
 
-  var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop
-  var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft
-
-  var clientTop = docElem.clientTop || body.clientTop || 0
-  var clientLeft = docElem.clientLeft || body.clientLeft || 0
+  var clientTop = doc_el.clientTop || body.clientTop || 0
+  var clientLeft = doc_el.clientLeft || body.clientLeft || 0
 
   var top = box.top + scrollTop - clientTop
   var left = box.left + scrollLeft - clientLeft

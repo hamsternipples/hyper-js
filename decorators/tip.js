@@ -1,18 +1,19 @@
 
 import h from '@hyper/dom/hyper-hermes'
+import { body, on, off, bounding_rect } from '@hyper/dom/dom-base'
 
-function tip (node, text, offset) {
-  offset = offset || 5
-  let el, body = document.body
-  let onmouseleave = (event) => {
+function tip (node, text, offset = 5) {
+  var el
+  var onmouseleave = (event) => {
     if (el) el.style.display = 'none'
   }
-  let onmouseenter = () => {
-    let r = body.getBoundingClientRect()
-    let rect = node.getBoundingClientRect()
+
+  var onmouseenter = () => {
+    let r = bounding_rect(body)
+    let rect = bounding_rect(node)
     if (!el) {
-      body.appendChild(el =
-        h('div', {c: 'tooltip-outer', s: {position: 'absolute', onmouseleave}},
+      body.aC(el =
+        h('div', {c: 'tooltip-outer', onmouseleave, s: {position: 'absolute'}},
           h('div', {c: 'tooltip-arrow'}),
           h('div', {c: 'tooltip-inner'}, text)
         )
@@ -23,16 +24,20 @@ function tip (node, text, offset) {
     el.style.left = Math.ceil(rect.right - (rect.width / 2)) + 'px'
     el.style.marginLeft = -Math.ceil((el.clientWidth-4) / 2) + 'px'
   }
-  node.addEventListener('mouseenter', onmouseenter)
-  node.addEventListener('mouseleave', onmouseleave)
 
-  return {
-    teardown () {
-      node.removeEventListener('mouseenter', onmouseenter)
-      node.removeEventListener('mouseleave', onmouseleave)
-      if (el) body.removeChild(el)
+  var teardown = () => {
+    off(node, 'mouseenter', onmouseenter)
+    off(node, 'mouseleave', onmouseleave)
+    if (el) {
+      if (ANCIENT) body.removeChild(el)
+      else  el.rm()
     }
   }
+
+  on(node, 'mouseenter', onmouseenter)
+  on(node, 'mouseleave', onmouseleave)
+
+  return IS_RACTIVE { teardown } : teardown
 }
 
 export default tip

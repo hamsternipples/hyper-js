@@ -15,7 +15,8 @@
 // TODO: allow for moment locales to be used
 // TODO: allow for moment formatting to be used in the masks (and this will make the library momentito) so it can be used as a drop-in replacement.
 
-import { compact, left_pad as pad } from '@hyper/utils'
+import { compact, left_pad as pad, is_fn } from '@hyper/utils'
+import { is_fn, is_str } from '@hyper/utils'
 
 import { DAY_NAMES, DAY_NAMES_SHORT, MONTH_NAMES, MONTH_NAMES_SHORT } from '@hyper/lingua/dates'
 
@@ -119,7 +120,7 @@ export default function dateFormat (_date, _mask, utc, gmt) {
   var date, mask
 
   // You can't provide utc if you skip other args (use the 'UTC:' mask prefix)
-  if (typeof _date === 'string' && !_mask) {
+  if (is_str(_date) && !_mask) {
     mask = _date
     date = new Date
   } else if (!((date = _date || new Date) instanceof Date)) {
@@ -168,8 +169,7 @@ export default function dateFormat (_date, _mask, utc, gmt) {
   // OPTIMISED!! (LOL)
   return ret = mask.replace(token, (match, v1, v2, v3) => {
     let fn_v,
-      fn = flags[match],
-      is_fn = typeof fn === 'function'
+      fn = flags[match]
 
     if ((fn_v = flags[match+'_']) && typeof(fn_v = v[fn_v]) === 'function') {
       if (is_fn) fn.v = fn_v

@@ -20,7 +20,9 @@
 //   })
 // )
 
-import h from './hermes'
+// !!! TOTALLY UNUSED / UNTESTED / BROKEN !!!
+
+import h from '/@hyper/dom/hyper-hermes'
 
 export default function (img, selection_canvas, onCrop) {
   if('function' === typeof selection_canvas)

@@ -3,6 +3,7 @@ import { error, is_array, int } from '@hyper/utils'
 // commonly used globals exported (to save a few bytes)
 export const win = window
 export const doc = win.document
+export const doc_el = doc.documentElement
 export const body = doc.body
 export const getComputedStyle = win.getComputedStyle
 export const customElements = win.customElements
@@ -39,11 +40,13 @@ export const sum_prop_values = (obj, props) => (
   return total + int_prop_value(obj, prop)
 }, 0)
 
+export const bounding_rect = (el) => el.getBoundingClientRect()
+
 export function scroll_to (id_or_el) {
   let el = getElementById(id_or_el)
 
   return !el ? null : isNode(el)
-    ? win.scrollBy(0, el.getBoundingClientRect().top)
+    ? win.scrollBy(0, bounding_rect(el).top)
     : win.scrollTo(0, 0)
 }
 

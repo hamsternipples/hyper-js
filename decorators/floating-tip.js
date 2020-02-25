@@ -1,4 +1,5 @@
 import h from '@hyper/dom/hyper-hermes'
+import { doc, doc_el } from '@hyper/dom/dom-base'
 
 function floatingTip (node, text, width) {
   if (text === undefined) return { teardown () {} }
@@ -9,15 +10,13 @@ function floatingTip (node, text, width) {
   var timer = 20
   var endalpha = 95
   var alpha = 0
-  var doc = document
-  var doce = doc.documentElement
   var T,t,c,b,height,hidden
   var ie = document.all ? true : false
 
   var onmousemove = function (e) {
     if (hidden) return
-    var u = ie ? event.clientY + doce.scrollTop : e.pageY
-    var l = ie ? event.clientX + doce.scrollLeft : e.pageX
+    var u = ie ? event.clientY + doc_el.scrollTop : e.pageY
+    var l = ie ? event.clientX + doc_el.scrollLeft : e.pageX
     T.style.top = (u - height) + 'px'
     T.style.left = (l + left) + 'px'
   }

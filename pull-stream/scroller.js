@@ -1,31 +1,33 @@
 var pull = require('pull-stream/pull')
 pull.drain = require('pull-stream/sinks/drain')
 var Pause = require('pull-pause')
-// var Obv = require('obv')
 
-import Obv from '@hyper/dom/observable'
+import { is_fn, noop, error } from '@hyper/utils'
+import { value as Obv } from '@hyper/dom/observable'
+import { win, on, off, bounding_rect, getComputedStyle } from '@hyper/dom/dom-base'
 
-var next = 'undefined' === typeof setImmediate ? setTimeout : setImmediate
-var buffer = Math.max(window.innerHeight * 2, 1000)
+
+var next = is_fn(setImmediate) ? setImmediate : setTimeout
+var buffer = Math.max(win.innerHeight * 2, 1000)
 
 
 export default function Scroller (scroller, content, render, isPrepend, isSticky, cb) {
-  assertScrollable(scroller)
+  if (DEBUG) assertScrollable(scroller)
   var obv = Obv()
 
   //if second argument is a function,
   //it means the scroller and content elements are the same.
-  if ('function' === typeof content) {
+  if (is_fn(content)) {
     cb = isSticky
     isPrepend = render
     render = content
     content = scroller
   }
 
-  if (!cb) cb = function (err) { if (err) throw err }
+  if (!cb) cb = (err) => { if (err) error(err) }
 
-  scroller.addEventListener('scroll', scroll)
-  var pause = Pause(function () {})
+  on(scroller, 'scroll', scroll)
+  var pause = Pause(noop)
   var queue = []
 
   //apply some changes to the dom, but ensure that
@@ -52,7 +54,7 @@ export default function Scroller (scroller, content, render, isPrepend, isSticky
   //wait until the scroller has been added to the document
   next(function next () {
     if (scroller.parentElement) pause.resume()
-    else                       setTimeout(next, 100)
+    else                        setTimeout(next, 100)
   })
 
   var stream = pull(
@@ -61,16 +63,13 @@ export default function Scroller (scroller, content, render, isPrepend, isSticky
       queue.push(e)
       obv.set(queue.length)
 
-      if (scroller.scrollHeight < window.innerHeight)
-        add()
+      if (scroller.scrollHeight < win.innerHeight) add()
 
       if (isVisible(content)) {
-        if (isEnd(scroller, buffer, isPrepend))
-          add()
+        if (isEnd(scroller, buffer, isPrepend)) add()
       }
 
-      if (queue.length > 5)
-        pause.pause()
+      if (queue.length > 5) pause.pause()
 
     }, function (err) {
       if (err) console.error(err)
@@ -116,7 +115,7 @@ function append (scroller, list, el, isPrepend, isSticky) {
 function assertScrollable (scroller) {
   var f = overflow(scroller)
   if (!/auto|scroll/.test(f))
-    throw new Error('scroller.style.overflowY must be scroll or auto, was:' + f + '!')
+    error('scroller.style.overflowY must be scroll or auto, was:' + f + '!')
 }
 
 function isEnd (scroller, buffer, isPrepend) {
@@ -155,7 +154,7 @@ function isTop (scroller, buffer) {
 }
 
 function isBottom (scroller, buffer) {
-  var rect = scroller.getBoundingClientRect()
+  var rect = bounding_rect(scroller)
   var topmax = scroller.scrollTopMax || (scroller.scrollHeight - rect.height)
   return scroller.scrollTop >= +((topmax) - (buffer || 0))
 }
