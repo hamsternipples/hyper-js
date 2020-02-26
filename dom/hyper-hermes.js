@@ -143,6 +143,7 @@ export let custom_attrs = {
   checked: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {select: fn}) }, // duplicate of selected
   input: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {input: fn}) },
   value: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {input: fn}) }, // duplicate of input
+  disabled: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {disabled: fn}) },
   go: (cleanupFuncs, e, url, roadtrip) => {
     // call on next_tick, to make sure the element is added to the dom.
     next_tick(() => {

@@ -160,6 +160,9 @@ export function observe_event (cleanupFuncs, el, observe_obj) {
     else if (s === 'input' || s === 'value') {
       cleanupFuncs.z(attribute(el, observe_obj[s+'.attr'], observe_obj[s+'.on'])(v))
     }
+    else if (s === 'disabled') {
+      cleanupFuncs.z(attribute(el, s, observe_obj[s+'.on'])(v))
+    }
     else if (s === 'hover') {
       cleanupFuncs.z(toggle(el, 'mouseover', 'mouseout')(v))
     }
