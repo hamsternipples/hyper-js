@@ -171,7 +171,7 @@ const isSameRoute = (routeA, routeB, dataA, dataB) => (
 )
 
 export default class RoadTrip {
-  constructor (base = '', container_el) {
+  constructor (base = '/', container_el) {
     let self = this
     self.routes = []
     self.transitioning = null
@@ -184,8 +184,10 @@ export default class RoadTrip {
     }
 
     if (base[0] !== '/') error("base must begin with a '/'")
+    // remove trailing slash for base (we add it back later)
     let bl = base.length - 1
-    self.base = base[bl] === '/' ? base.substr(0, bl) : base
+    self.base = bl && base[bl] === '/' ? base.substr(0, bl) : base
+    if (DEBUG) console.log('roadtrip started:', self.base)
 
     if (!container_el) container_el = win
     let parent = lookup_parent_with_attr(container_el, 'roadtrip')
