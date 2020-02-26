@@ -10,7 +10,7 @@
 import { is_obv } from './observable'
 import { observe_event, add_event } from './observable-event'
 import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/utils'
-import { each, every } from '@hyper/utils'
+import { each, call_each, every } from '@hyper/utils'
 import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
 
