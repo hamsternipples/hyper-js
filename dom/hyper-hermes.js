@@ -561,6 +561,20 @@ Node_prototype.empty = function (child) {
   while (child = this.firstChild) this.removeChild(child)
 }
 
+// enable disable classes (with timed undo)
+// set_to is truthy - add class
+// set_to is falsey - remove class
+// set_to is -1/undefined/null - toggle class
+Node_prototype.c = function (class_name, set_to, undo_after_sec) {
+  set_to = set_to != null && set_to !== -1 ? !set_to : undefined // the negated version. save 1 byte! (otherwise it would have to be !!set_to and the negation would be in the after function)
+  if (undo_after_sec) {
+    after(undo_after_sec, () => {
+      this.classList.toggle(class_name, set_to)
+    })
+  }
+  return this.classList.toggle(class_name, !set_to)
+}
+
 // event emitter shortcuts
 Node_prototype.on = Node_prototype.addEventListener
 Node_prototype.off = Node_prototype.removeEventListener
