@@ -17,7 +17,19 @@ h1,h2,h3,h4,h5,h6 {
   text-align: center;
 }
 
-/* remove the stupid blue borders around the buttons.. */
+/* remove the stupid blue borders around the buttons and textareas.. */
 button:focus { outline: 0 }
+textarea:focus { outline: 0 }
 
-/* reset list element styles */
+/*
+anchor elements cannot be used because passive listeners need to be used for performance reasons, which means preventDefault cannot be called for clicks on the anchor elements. this makes single-page navigation impossible.
+
+so, the 'link' element is used. by default it's `display: hidden`, which is good linking css files. the link element does show the href value on the bottom of the screen, so they basically work visually just like anchor elements, cept they don't do anything -- which is what we want. we listen to click events passively on them and navigate inside of the page perfectly.
+
+this resets the style to show links as inline elements. however, since the header by default is `display: none` all of the css reference links in the header will not be shown, so it's fine.
+
+note: it appears that browsers only preload the content if rel="stylesheet" or rel="preload" ref: https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types
+
+                -kenny 2020-02-26
+*/
+link { display: inline; cursor: pointer }
