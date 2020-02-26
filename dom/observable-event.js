@@ -131,8 +131,8 @@ export function add_event (cleanupFuncs, e, event, listener, opts) {
 export function boink (cleanupFuncs, el, obv, opts) {
   // passing attr=0 here to tell it to not grab the value of any attribute on the el.
   cleanupFuncs.push(
-    listen(el, 'click', 0, (ev) => { is_obv(obv) ? obv(!obv()) : obv.call(el, ev) }, 0, opts),
-    listen(el, 'touchstart', 0, (ev) => { prevent_default(ev); is_obv(obv) ? obv(!obv()) : obv.call(el, ev) }, 0, opts)
+    listen(el, 'click', 0, (ev) => { is_obv(obv) ? obv(!obv()) : obv.call(el, ev, el) }, 0, opts),
+    listen(el, 'touchstart', 0, (ev) => { prevent_default(ev); is_obv(obv) ? obv(!obv()) : obv.call(el, ev, el) }, 0, opts)
   )
 }
 
