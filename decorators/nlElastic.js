@@ -14,16 +14,16 @@ function nlElastic (node, keypath, padding = 24) {
 
   // if elastic already applied (or is the mirror element)
   // if Ractive, then just exit.
-  if (IS_RACTIVE && $ta.dataset.elastic) return
+  if (RACTIVE && $ta.dataset.elastic) return
   // modern platforms should error
   if (DEBUG && $ta.dataset.elastic) error('this is already an elastic textarea')
 
   // ensure the element is a textarea, and browser is capable
   // if Ractive, just exit, cause it's a programmer error or an old browser
-  if (IS_RACTIVE && ta.nodeName !== 'TEXTAREA' || (SUPPORT_ANCIENT && !getComputedStyle)) return
+  if (RACTIVE && ta.nodeName !== 'TEXTAREA' || (ANCIENT && !getComputedStyle)) return
   // modern platforms will error
   if (DEBUG && ta.nodeName !== 'TEXTAREA') error('node is not a textarea')
-  if (DEBUG && (SUPPORT_ANCIENT && !getComputedStyle)) error('getComputedStyle not supported on this platform')
+  if (DEBUG && (ANCIENT && !getComputedStyle)) error('getComputedStyle not supported on this platform')
 
   // set these properties before measuring dimensions
   assign($ta.style, {
@@ -37,17 +37,17 @@ function nlElastic (node, keypath, padding = 24) {
   ta.value = ''
   ta.value = text
 
-  if (IS_RACTIVE) var ractive = Ractive.getNodeInfo(node).ractive
+  if (RACTIVE) var ractive = Ractive.getNodeInfo(node).ractive
   var mirrorInitStyle =
     'position:absolute;top:-999px;right:auto;bottom:auto;' +
     'left:0;overflow:hidden;box-sizing:content-box;' +
-    (SUPPORT_ANCIENT
+    (ANCIENT
     ? '-webkit-box-sizing:content-box;-moz-box-sizing:content-box;' :'') +
     'min-height:0 !important;height:0 !important;padding:0;' +
     'word-wrap:break-word;border:0'
 
   var taStyle = getComputedStyle(ta)
-  var borderBox = get_prop_value(taStyle, 'box-sizing') === 'border-box' || (SUPPORT_ANCIENT && (
+  var borderBox = get_prop_value(taStyle, 'box-sizing') === 'border-box' || (ANCIENT && (
       get_prop_value(taStyle, '-moz-box-sizing') === 'border-box' ||
       get_prop_value(taStyle, '-webkit-box-sizing') === 'border-box'))
   var boxOuter = !borderBox ? {width: 0, height: 0} : {
@@ -61,7 +61,18 @@ function nlElastic (node, keypath, padding = 24) {
   var copyStyle = 'font-family|font-size|font-weight|font-style|letter-spacing|line-height|text-transform|word-spacing|text-indent'.split('|')
   var mirrored, active, mirror
 
-  if (SUPPORT_ANCIENT) {
+  var forceAdjust = () => {
+    active = false
+    adjust()
+  }
+
+  var teardown = () => {
+    mirror.rm()
+    off(ta, 'resize', forceAdjust)
+    if (!ANCIENT) off(ta, 'input', adjust)
+  }
+
+  if (ANCIENT) {
     // Opera returns max-height of -1 if not set
     maxHeight = maxHeight && maxHeight > 0 ? maxHeight : 9e4
   }
@@ -90,7 +101,7 @@ function nlElastic (node, keypath, padding = 24) {
       mirrorStyle += val + ':' + get_prop_value(taStyle, val) + ';'
     })
 
-    if (SUPPORT_ANCIENT) mirror.setAttribute('style', mirrorStyle)
+    if (ANCIENT) mirror.setAttribute('style', mirrorStyle)
     else mirror.style = mirrorStyle
   }
 
@@ -131,7 +142,7 @@ function nlElastic (node, keypath, padding = 24) {
 
       if (taHeight < mirrorHeight) {
         ta.style.height = mirrorHeight + 'px'
-        if (IS_RACTIVE) raf(() => ractive.fire('elastic:resize', $ta))
+        if (RACTIVE) raf(() => ractive.fire('elastic:resize', $ta))
       }
 
       // small delay to prevent an infinite loop
@@ -139,26 +150,18 @@ function nlElastic (node, keypath, padding = 24) {
     }
   }
 
-  function forceAdjust () {
-    active = false
-    adjust()
-  }
-
-  /*
-   * initialise
-   */
-
   // listen
-  if (SUPPORT_ANCIENT && 'onpropertychange' in ta && 'oninput' in ta) {
+  if (ANCIENT && 'onpropertychange' in ta && 'oninput' in ta) {
     // IE9
     ta['oninput'] = ta.onkeyup = adjust
   } else {
-    ta['oninput'] = adjust
+    on(ta, 'input', adjust)
+    // ta['oninput'] = adjust
   }
 
   on(ta, 'resize', forceAdjust)
 
-  if (IS_RACTIVE) {
+  if (RACTIVE) {
     if (keypath) ractive.observe(keypath, function (v) {
       forceAdjust()
     })
@@ -171,12 +174,7 @@ function nlElastic (node, keypath, padding = 24) {
 
   next_tick(adjust)
 
-  var teardown = () => {
-    mirror.rm()
-    off('resize', forceAdjust)
-  }
-
-  return IS_RACTIVE ? { teardown } : teardown
+  return RACTIVE ? { teardown } : teardown
 }
 
 export default nlElastic

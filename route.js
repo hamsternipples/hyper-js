@@ -8,17 +8,17 @@ export default class Route {
     this.map = [this.vars]
     this.regExp = [pathToRegExp(pattern)]
     // this.strictRegExp = [pathToStrictRegExp(pattern)]
-    if (IS_RACTIVE) this.isComponent = !!Handler.extend
+    if (RACTIVE) this.isComponent = !!Handler.extend
     this.Handler = Handler
     this.observe = assign({ qs: [], hash: [], state: [] }, observe)
     this.allObserved = this.observe.qs.concat(this.observe.hash, this.observe.state)
     this.router = router || {}
     this.data = data || Handler.data || {}
-    if (IS_RACTIVE) this.view = null
+    if (RACTIVE) this.view = null
   }
 
   destroy () {
-    if (IS_RACTIVE) {
+    if (RACTIVE) {
       this.view.teardown()
       this.view = null
     }
@@ -37,7 +37,7 @@ export default class Route {
     let data = {}
 
     for (let i = 0, c = this.allObserved.length; i < c; i++) {
-      if (IS_RACTIVE) data[this.allObserved[i]] = this.view.get(this.allObserved[i])
+      if (RACTIVE) data[this.allObserved[i]] = this.view.get(this.allObserved[i])
       // @Incomplete: the obvs need to be stored somewhere. I probably want to make them get those values
     }
 
@@ -66,7 +66,7 @@ export default class Route {
   }
 
   update (uri, data) {
-    if (IS_RACTIVE) this.view.set(this.parse(uri, data))
+    if (RACTIVE) this.view.set(this.parse(uri, data))
     // if (this.view) data = assign(this.view.get(), data)
     // if (this.view) this.view.reset(data)
     return this
@@ -77,7 +77,7 @@ export default class Route {
     let _data = this.parse(uri, data)
 
     // not a component
-    if (IS_RACTIVE) if (!this.isComponent) {
+    if (RACTIVE) if (!this.isComponent) {
       this.Handler({ el: this.router.el, data: _data, uri: this.router.uri })
     } else {
       // init new Ractive

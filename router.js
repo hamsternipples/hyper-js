@@ -89,7 +89,7 @@ export default class Router extends EventEmitter {
       // update the view's data frov the route (path/qs/hash variables)
       this.uri = uri
       route.update(uri, data)
-      if (IS_RACTIVE) route.view.fire('dispatch')
+      if (RACTIVE) route.view.fire('dispatch')
       this.emit('dispatch')
     } else if (options.reload || shouldDispatch(this.uri, uri, route)) {
       // @Incomplete: need to add onleave hook
@@ -105,7 +105,7 @@ export default class Router extends EventEmitter {
       // init new route
       this.uri = uri
       this.route = route.init(uri, data)
-      if (IS_RACTIVE) this.route.view.fire('dispatch')
+      if (RACTIVE) this.route.view.fire('dispatch')
 
       // emit `route` event
       this.emit('route', route)
@@ -202,7 +202,7 @@ export default class Router extends EventEmitter {
         if (href && !el.classList.contains('router-ignore') && pattern.test(href)) {
           var options = { state: {} }
 
-          if (IS_RACTIVE && _this.route && _this.route.view) {
+          if (RACTIVE && _this.route && _this.route.view) {
             for (let global of _this.globals) {
               options.state[global] = _this.route.view.get(global)
             }

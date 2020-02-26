@@ -1,6 +1,6 @@
 import { win } from './dom-base'
 
-var requestAnimationFrame = win.requestAnimationFrame || (SUPPORT_ANCIENT &&
+var requestAnimationFrame = win.requestAnimationFrame || (ANCIENT &&
   win.mozRequestAnimationFrame ||
   win.webkitRequestAnimationFrame || (function () {
     /* rAF shim. Gist: https://gist.github.com/julianshapiro/9497513 */
