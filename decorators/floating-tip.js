@@ -1,8 +1,13 @@
-import h from '@hyper/dom/hyper-hermes'
-import { doc, doc_el } from '@hyper/dom/dom-base'
+import { h, set_style } from '@hyper/dom/hyper-hermes'
+import { doc, body, doc_el, on, off, IS_IE } from '@hyper/dom/dom-base'
+
+// @Cleanup: this code is pretty nasty. I think decorators/tip is a bit better.
+// someday, revisit this and update it if necessary, otherwise delete it.
+
+// also, I'm not sure where the styles for this are, either
 
 function floatingTip (node, text, width) {
-  if (text === undefined) return { teardown () {} }
+  if (text == null) return { teardown () {} }
   var top = 3
   var left = 3
   var maxw = 300
@@ -11,20 +16,21 @@ function floatingTip (node, text, width) {
   var endalpha = 95
   var alpha = 0
   var T,t,c,b,height,hidden
-  var ie = document.all ? true : false
 
   var onmousemove = function (e) {
     if (hidden) return
-    var u = ie ? event.clientY + doc_el.scrollTop : e.pageY
-    var l = ie ? event.clientX + doc_el.scrollLeft : e.pageX
-    T.style.top = (u - height) + 'px'
-    T.style.left = (l + left) + 'px'
+    var u = ANCIENT && IS_IE ? event.clientY + doc_el.scrollTop : e.pageY
+    var l = ANCIENT && IS_IE ? event.clientX + doc_el.scrollLeft : e.pageX
+    set_style(T, {
+      top: u - height
+      left: l + left
+    })
   }
 
   var show = function (v, w) {
     hidden = false
-    if (T === void 0) {
-      doc.body.appendChild(
+    if (!T) {
+      body.appendChild(
         T = h('div', {id: 'T', style: {opacity: 0, filter: 'alpha(opacity=0)'}},
           // t = h('div', {id: 'Ttop'}),
           c = h('div', {id: 'Tcont'})
@@ -33,12 +39,12 @@ function floatingTip (node, text, width) {
       )
 
       // TODO: use global addEventListener a la `rolex`
-      doc.addEventListener('mousemove', onmousemove)
+      on(doc, 'mousemove', onmousemove)
     }
     T.style.display = 'block'
     c.innerHTML = typeof text === 'function' ? text() : text
     T.style.width = width ? width + 'px' : 'auto'
-    if (!width && ie) {
+    if (ANCIENT && IS_IE && !width) {
       // t.style.display = 'none'
       // b.style.display = 'none'
       T.style.width = T.offsetWidth // + 'px'
@@ -74,16 +80,16 @@ function floatingTip (node, text, width) {
     T.timer = setInterval(function () { fade(-1) }, timer)
   }
 
-  node.addEventListener('mouseenter', function onmouseenter () { show() })
-  node.addEventListener('mouseleave', function onmouseleave () { hide() })
+  on(node, 'mouseenter', function onmouseenter () { show() })
+  on(node, 'mouseleave', function onmouseleave () { hide() })
 
   return {
     teardown() {
-      node.removeEventListener('mouseenter', onmouseenter)
-      node.removeEventListener('mouseleave', onmouseleave)
+      off(node, 'mouseenter', onmouseenter)
+      off(node, 'mouseleave', onmouseleave)
       if (T) {
         clearInterval(T.timer)
-        doc.removeEventListener('mousemove', onmousemove)
+        off(doc, 'mousemove', onmousemove)
         doc.body.removeChild(T)
       }
     }

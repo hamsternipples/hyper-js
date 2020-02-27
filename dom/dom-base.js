@@ -5,6 +5,7 @@ export const win = window
 export const doc = win.document
 export const doc_el = doc.documentElement
 export const body = doc.body
+export const IS_IE = doc.all ? true : false
 export const getComputedStyle = win.getComputedStyle
 export const customElements = win.customElements
 export const location = doc.location
