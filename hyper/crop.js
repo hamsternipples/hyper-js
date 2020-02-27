@@ -43,7 +43,8 @@ export default function (img, selection_canvas, onCrop) {
   ctx.drawImage(img, 0, 0)
   //show selection as shadown region.
   //TODO: invert this so unselected portion is in shadow
-  ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+  if (ANCIENT) ctx.fillStyle = 'rgba(0,0,0,.2)'
+  else ctx.fillStyle = '#0002'
   ctx2 = c2.getContext('2d')
 
   var down = false

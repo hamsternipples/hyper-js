@@ -57,7 +57,8 @@ function CropHost (elCanvas, opts, events) {
       ctx.save()
 
       // and make it darker
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
+      if (ANCIENT) ctx.fillStyle = 'rgba(0,0,0,.65)'
+      else ctx.fillStyle = '#0009'
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
       ctx.restore()
