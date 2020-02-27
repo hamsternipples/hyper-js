@@ -1,6 +1,6 @@
 
 import { error, each } from '@hyper/utils'
-import { is_obv, ensure_obv, bind2 } from '@hyper/dom/observable'
+import { is_obv, ensure_obv, bind2, transform, compute } from '@hyper/dom/observable'
 import { on, off, dispatch_event, prevent_default } from '@hyper/dom/dom-base'
 
 
@@ -162,6 +162,10 @@ export function observe_event (cleanupFuncs, el, observe_obj) {
     }
     else if (s === 'disabled') {
       cleanupFuncs.z(attribute(el, s, observe_obj[s+'.on'])(v))
+    }
+    else if (s === 'hidden') {
+      // cleanupFuncs.z(v(v => { el.style.display = v ? 'none' : '' }, 1))
+      cleanupFuncs.z(v(v => { el.hidden = v }))
     }
     else if (s === 'hover') {
       cleanupFuncs.z(toggle(el, 'mouseover', 'mouseout')(v))
