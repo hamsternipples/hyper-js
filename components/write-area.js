@@ -36,8 +36,8 @@ export default function write_area (G, cb, placeholder) {
 
   }
   var textarea = h('textarea', {
-    onkeydown: (e) => {
-      if ((e.ctrlKey || e.shiftKey) && e.key === 'Enter') return send_it(), prevent_default(e)
+    keydown: (e) => {
+      return ((e.ctrlKey || e.shiftKey) && e.which === 13) ? (send_it(), prevent_default(e)) : 0
     },
     onfocus: clear_tip,
     value: txt,
