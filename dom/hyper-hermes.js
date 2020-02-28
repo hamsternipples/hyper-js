@@ -174,11 +174,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
     next_tick(() => {
       if (is_fn(o = custom_attrs[k])) {
         o(cleanupFuncs, e, v)
-      } else if (k.substr(0, 2) === 'on') {
-        add_event(cleanupFuncs, e, k.substr(2), v, false)
-      } else if (k.substr(0, 6) === 'before') {
-        add_event(cleanupFuncs, e, k.substr(6), v, true)
-      } else {
+      } else if (is_obv(v)) {
         // setAttribute was used here, primarily for svg support.
         // we may need to make a second version or something which works well with svg, perhaps instead using setAttributeNode
         // however, as mentioned in this article it may be desirable to use property access instead
@@ -191,6 +187,22 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
         if (s === 'INPUT') observe_event(cleanupFuncs, e, {input: v})
         if (s === 'SELECT') observe_event(cleanupFuncs, e, k === 'label' ? {select_label: v} : {select: v})
         if (s === 'TEXTAREA') observe_event(cleanupFuncs, e, {value: v})
+      } else {
+        // normal function. listen to the event
+        if (k.substr(0, 2) === 'on') {
+          // passive listener by default
+          // eg. onkeyup: (ev) => ev.preventDefault() // <-- *NOT* ok.
+          add_event(cleanupFuncs, e, k.substr(2), v, false)
+        } else if (k.substr(0, 6) === 'before') {
+          // passive + capture
+          // @Incomplete: I don't really have a use-case for this, but I imagine that one would want to preventDefault, if capturing the event. I don't know, so for now it's passive
+          // eg. beforekeyup: (ev) => ev.preventDefault() // <-- *NOT* ok.
+          add_event(cleanupFuncs, e, k.substr(6), v, true)
+        } else {
+          // non-passive (used to do things like prevent keys)
+          // eg. keyup: (ev) => ev.preventDefault() // <-- this is ok.
+          add_event(cleanupFuncs, e, k, v, null)
+        }
       }
     })
   } else {

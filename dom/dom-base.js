@@ -86,8 +86,9 @@ export function lookup_parent_with_attr (el, attr, filter) {
 //   on(emitter, 'click', ..., { passive: false, capture: true })
 //             -kenny 14-01-2020
 let event_opts = (opts) =>
-  opts === true ? { passive: true, capture: true }
+  opts == null ? false
   : opts === false ? { passive: true }
+  : opts === true ? { passive: true, capture: true }
   : opts
 
 // event stuff
@@ -115,4 +116,5 @@ export function dispatch_event (element, event, val) {
 
 export function prevent_default (event) {
   event && (event.preventDefault(), event.stopImmediatePropagation())
+  return false
 }

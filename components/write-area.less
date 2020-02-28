@@ -1,0 +1,53 @@
+.write-area {
+  position: relative;
+
+  > button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    border-radius: 4px;
+    background: linear-gradient(0, #dadada, transparent);
+  }
+
+  > textarea {
+    border: solid 1px #ccc;
+    border-radius: 8px;
+    width: 100%;
+    padding: 4px 8px;
+    resize: vertical;
+    // slow fade out
+    transition: border-color 1s ease-in;
+    &:focus, &.error, &.success {
+      // fast fade in
+      transition: border-color 0.1s ease-out;
+    }
+
+    &:focus { border-color: #ffca7a; }
+    &.error { border-color: #ff0200; }
+    &.success { border-color: #0002ff; }
+  }
+
+  > .tip {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    background: #ccc8;
+    border: solid 1px #ccc;
+    border-radius: 4px 4px 0 0;
+    font-size: 80%;
+    line-height: 14px;
+    &.error {
+      border: solid 1px #f00;
+      color: darkred;
+      background: #ff717188;
+    }
+
+    &.success {
+      border: solid 1px #c8c8ff;
+      color: #5b7eff;
+      background: #b1c9ff88;
+    }
+  }
+}
