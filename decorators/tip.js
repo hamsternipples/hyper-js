@@ -1,11 +1,13 @@
 
-import h from '@hyper/dom/hyper-hermes'
+import { h, set_style } from '@hyper/dom/hyper-hermes'
 import { body, on, off, bounding_rect } from '@hyper/dom/dom-base'
 
 function tip (node, text, offset = 5) {
   var el
   var onmouseleave = (event) => {
-    if (el) el.style.display = 'none'
+    if (el) ANCIENT
+      ? el.style.display = 'none'
+      : el.hidden = 1
   }
 
   var onmouseenter = () => {
@@ -19,10 +21,15 @@ function tip (node, text, offset = 5) {
         )
       )
     }
-    el.style.display = 'block'
-    el.style.top = offset + rect.top - r.top + 'px'
-    el.style.left = Math.ceil(rect.right - (rect.width / 2)) + 'px'
-    el.style.marginLeft = -Math.ceil((el.clientWidth-4) / 2) + 'px'
+
+    if (ANCIENT) el.style.display = 'block'
+    else el.hidden = 0
+
+    set_style(el, {
+      top: offset + rect.top - r.top,
+      left: Math.ceil(rect.right - (rect.width / 2)),
+      marginLeft: -Math.ceil((el.clientWidth-4) / 2),
+    })
   }
 
   var teardown = () => {
