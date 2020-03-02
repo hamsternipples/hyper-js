@@ -56,12 +56,12 @@ export function value (initial) {
 
   function obv (val, do_immediately) {
     return (
-      val === undefined ? obv.v                                                               // getter
-    : typeof val !== 'function' ? (obv.v === val ? undefined :
+      val === undefined ? obv.v // getter
+    : typeof val !== 'function' ? (Object.is(obv.v, val) ? undefined :
       // disabled for now...
       // (DEBUG && (typeof val === 'object' && Object.prototype.toString.call(val) === '[object Object]') && error('use obv/obj_value to store plain objects (it properly deep compares them)')),
       emit(listeners, obv.v, obv.v = val), val) // setter only sets if the value has changed (won't work for byref things like objects or arrays)
-    : (listeners.push(val), (DEBUG && VALUE_LISTENERS++), (obv.v === undefined || do_immediately === false ? obv.v : val(obv.v)), () => {                 // listener
+    : (listeners.push(val), (DEBUG && VALUE_LISTENERS++), (obv.v === undefined || do_immediately === false ? obv.v : val(obv.v)), () => { // listener
         remove(listeners, val)
         DEBUG && VALUE_LISTENERS--
       })
@@ -179,7 +179,7 @@ export function transform (obv, down, up) {
 // transform an array of obvs
 if (DEBUG) var COMPUTE_LISTENERS = 0
 export function compute (obvs, compute_fn) {
-  let is_init = true, len = obvs.length
+  let is_init = 1, len = obvs.length
   let obv_vals = new Array(len)
   let listeners = [], removables = [], fn
 
@@ -191,7 +191,7 @@ export function compute (obvs, compute_fn) {
       removables.push(fn((v) => {
         let prev = obv_vals[i]
         obv_vals[i] = v
-        if (prev !== v && is_init === false) obv(compute_fn.apply(null, obv_vals))
+        if (!Object.is(prev, v) && !is_init) obv(compute_fn.apply(null, obv_vals))
       }, is_init))
     } else {
       // items in the obv array can also be literals
@@ -205,7 +205,7 @@ export function compute (obvs, compute_fn) {
   obv.x = () => { for (fn of removables) fn() }
 
   obv.v = compute_fn.apply(null, obv_vals)
-  is_init = false
+  is_init = 0
 
   return obv
 
