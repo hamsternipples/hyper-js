@@ -69,6 +69,11 @@ export function value (initial) {
   }
 }
 
+export const add = (obv, n = 1) => obv(obv.v + n)
+export const sub = (obv, n = 1) => obv(obv.v - n)
+export const mul = (obv, n = 1) => obv(obv.v * n)
+export const div = (obv, n = 1) => obv(obv.v / n)
+
 
 // an observable object
 // @Incomplete: find a solution here because this isn't necessarily possible to be used with `pure_getters`
