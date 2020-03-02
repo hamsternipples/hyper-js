@@ -238,7 +238,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
         o = e.classList
         if (is_array(v)) each(v, s => s && o.add(s))
         else if (is_obj(v))
-          every(v, val => {
+          every(v, (val, s) => {
             is_obv(val)
             ? cleanupFuncs.z(val((v) => o.toggle(s, v), 1))
             : o.toggle(s, val)
