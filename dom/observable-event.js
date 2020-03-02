@@ -92,8 +92,8 @@ export function select (element, attr = 'value', event = 'change') {
 //toggle based on an event, like mouseover, mouseout
 export function toggle (el, up_event, down_event) {
   var _val = false
-  const onUp = () => _val || val.call(el, _val = true)
-  const onDown = () => _val && val.call(el, _val = false)
+  var on_up = (listener) => () => _val || listener.call(el, _val = true)
+  var on_down = (listener) => () => _val && listener.call(el, _val = false)
 
   observable._obv = 'toggle'
   return observable
@@ -101,10 +101,15 @@ export function toggle (el, up_event, down_event) {
   function observable (val) {
     return (
       val === undefined ? _val
-    : typeof val !== 'function' ? undefined //read only
-    : (on(el, up_event, onUp), on(el, down_event || up_event, onDown), () => {
-        off(el, up_event, onUp); off(el, down_event || up_event, onDown)
-      })
+    : typeof val !== 'function' ? undefined // read only
+    : (
+        on(el, up_event, on_up = on_up(val)),
+        on(el, down_event || up_event, on_down = on_down(val)),
+        () => { // unlisten
+          off(el, up_event, on_up)
+          off(el, down_event || up_event, on_down)
+        }
+      )
     )
   }
 }
