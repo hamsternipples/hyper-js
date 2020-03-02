@@ -43,7 +43,7 @@ export function obv_event (element, attr = 'value', event = 'keyup', event_filte
 export function update_obv (obv, update_fn) {
   if (DEBUG) ensure_obv(obv)
   if (DEBUG) if (typeof update_fn !== 'function') error('update_fn should be a function which updates the obv value, eg. (v) => !v')
-  return (evt) => obv(update_fn(obv(), evt))
+  return (evt) => obv(update_fn(evt, obv()))
 }
 
 
