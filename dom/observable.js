@@ -36,20 +36,20 @@ export function bind2 (l, r) {
 
 // An observable that stores a value.
 if (DEBUG) var VALUE_LISTENERS = 0
-export function value (initial) {
-  let listeners = []
+export function value (initial, listeners = []) {
+  // let listeners = []
   // if the value is already an observable, then just return it
   if (typeof initial === 'function' && initial._obv === 'value') return initial
   if (DEBUG) obv.gc = () => compactor(listeners)
   if (DEBUG) define_prop(obv, 'listeners', { get: obv.gc })
   obv.v = initial
   obv.set = (val) => emit(listeners, obv.v, obv.v = val === undefined ? obv.v : val)
-  obv.once = (fn, do_immediately) => {
-    let remove = obv((val, prev) => {
+  obv.once = (fn, do_immediately, stop_listening) => {
+    stop_listening = obv((val, prev) => {
       fn(val, prev)
-      remove()
+      stop_listening()
     }, do_immediately)
-    return remove
+    return stop_listening
   }
   obv._obv = 'value'
   return obv
@@ -61,18 +61,26 @@ export function value (initial) {
       // disabled for now...
       // (DEBUG && (typeof val === 'object' && Object.prototype.toString.call(val) === '[object Object]') && error('use obv/obj_value to store plain objects (it properly deep compares them)')),
       emit(listeners, obv.v, obv.v = val), val) // setter only sets if the value has changed (won't work for byref things like objects or arrays)
-    : (listeners.push(val), (DEBUG && VALUE_LISTENERS++), (obv.v === undefined || do_immediately === false ? obv.v : val(obv.v)), () => { // listener
-        remove(listeners, val)
-        DEBUG && VALUE_LISTENERS--
-      })
+    : (
+        listeners.push(val),
+        (DEBUG && VALUE_LISTENERS++),
+        (
+          obv.v === undefined || do_immediately === false
+          ? obv.v
+          : val(obv.v)
+        ), () => { // listener
+          remove(listeners, val)
+          DEBUG && VALUE_LISTENERS--
+        }
+      )
     )
   }
 }
 
-export const add = (obv, n = 1) => obv(obv.v + n)
-export const sub = (obv, n = 1) => obv(obv.v - n)
-export const mul = (obv, n = 1) => obv(obv.v * n)
-export const div = (obv, n = 1) => obv(obv.v / n)
+export const inc = (obv, n = 1) => obv(obv.v + n)
+export const dec = (obv, n = 1) => obv(obv.v - n)
+export const mul = (obv, n = 2) => obv(obv.v * n)
+export const div = (obv, n = 2) => obv(obv.v / n)
 
 
 // an observable object
