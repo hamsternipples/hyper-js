@@ -5,6 +5,12 @@
 //  - if base is '/xxx', then: /xxx/my/route, /xxx/, and /xxx are all valid starting paths. previously, '/xxx/' (trailing slash) was invalid
 //  - 404 route
 
+/*
+TODO:
+- make RouteData a plain old object, and reduce its size.
+- when starting without a defined base, it should automatically detect the base
+*/
+
 import { win, location, origin, base_path } from '@hyper/dom/dom-base'
 import { href_pathname, href_query, href_hash } from '@hyper/dom/dom-base'
 import { lookup_parent_with_attr } from '@hyper/dom/dom-base'
@@ -38,7 +44,7 @@ class RouteData {
     this.params = params
     this.query = query
     this.hash = hash
-    this.isInitial = isInitial
+    // this.isInitial = isInitial
     this.scrollX = scrollX
     this.scrollY = scrollY
   }
@@ -171,7 +177,7 @@ const isSameRoute = (routeA, routeB, dataA, dataB) => (
 )
 
 export default class RoadTrip {
-  constructor (base = '/', container_el) {
+  constructor (base, container_el = win) {
     let self = this
     self.routes = []
     self.transitioning = null
@@ -183,40 +189,48 @@ export default class RoadTrip {
       leave: () => Promise.resolve()
     }
 
-    if (base[0] !== '/') error("base must begin with a '/'")
     // remove trailing slash for base (we add it back later)
-    let bl = base.length - 1
-    self.base = bl && base[bl] === '/' ? base.substr(0, bl) : base
-    if (DEBUG) console.log('roadtrip started:', self.base)
+    if (base) {
+      if (DEBUG && base[0] !== '/') error(`base must begin with a '/'`)
+      self.base = slasher(base)
+    }
+    // @Incomplete: if initial == true && !this.base, for each segment in the location.pathname, it should traverse all of the routes with more than just a variable, and reroute to the proper base if the path is found.
+    if (TMP) console.log('roadtrip started:', base)
 
-    if (!container_el) container_el = win
     let parent = lookup_parent_with_attr(container_el, 'roadtrip')
-    if (parent) {
-      if (DEBUG) console.info('parent:', parent)
-      error('parent element is already on a roadtrip!')
-    } else {
+    if (!parent) {
       container_el.roadtrip = self
+    } else if (DEBUG) {
+      console.info('parent:', parent)
+      error('parent element is already on a roadtrip!')
     }
   }
 
   add (path, options, ctx = this) {
-    if (path == 404) this._404 = new Route(path, options, ctx)
-    else this.routes.push(new Route(this.base + (path === '/' ? '' : path), options, ctx))
-    return this
+    if (DEBUG && !ctx.base) error('for now, you must define base before adding any routes')
+    if (path == 404) ctx._404 = new Route(path, options, ctx)
+    else ctx.routes.push(new Route(this.base + (path === '/' ? '' : path), options, ctx))
+    return ctx
   }
 
   start (options = {}) {
-    // TODO: maybe put a base detector here..
-    // it would get basePath and then split it into segments.
+    // changed to pathname
+    const start_href = location.pathname // location.href
+
+    // this will become a base detector here..
+    // it will get basePath and then split it into segments.
     // first get the max segments length
     // next, for all routes which match
     // eg. if the current path is 4 segments long, and the longest route is 2 segments, then we can assume that for /xxx/xxx/yyy/yyy, /xxx/xxx is the base, and /yyy/yyy is the route (where /yyy/yyy matches one of the routes)
+    let base = this.base
+    if (!base) {
+      if (DEBUG) error('soon, you can do this. for now, you must define the base in the constructor, because the add function depends on that data being available')
+      this.base = slasher(start_href)
+    }
 
-    // changed to pathname
-    const start_href = location.pathname // location.href
     const href = this.routes.some(route => route.matches(start_href)) ?
       start_href :
-      options.fallback || this.base
+      (options.fallback || this.base)
 
     this.initial = true
     return this.goto(href, {
@@ -227,6 +241,7 @@ export default class RoadTrip {
   }
 
   goto (href = '/', options = {}) {
+    if (DEBUG) console.info('goto:', href)
     this.scrollHistory[this.currentID] = {
       x: win.scrollX,
       y: win.scrollY
@@ -247,6 +262,7 @@ export default class RoadTrip {
       //               -kenny 12-01-2020
       href += '/'
     }
+
     const promise = new Promise((fulfil, reject) => {
       target = this._target = {
         href,
@@ -275,7 +291,7 @@ export default class RoadTrip {
 
     if (target.options.code === 404) {
       if (new_route = this._404) new_data = new_route.exec(target, this.initial, true)
-      else error('no handler for 404 is present')
+      else if (DEBUG) error('no handler for 404 is present')
     } else {
       for (let route of this.routes) {
         if (new_data = route.exec(target, this.initial)) {
@@ -432,15 +448,15 @@ export function watchLinks (roadtrip, container_el) {
   //
   //         -kenny 12-01-2020
 
-  let is_passive = { passive: false, capture: true }
+  const is_passive = { passive: false, capture: true }
   on(container_el, 'click', click_handler, is_passive)
   on(container_el, 'touchstart', click_handler, is_passive)
-  on(win, 'popstate', popstate_handler, { passive: true })
+  on(win, 'popstate', popstate_handler, is_passive)
 
   // return a remove function
   return () => {
     off(container_el, 'click', click_handler, is_passive)
     off(container_el, 'touchstart', click_handler, is_passive)
-    off(win, 'popstate', popstate_handler, { passive: true })
+    off(win, 'popstate', popstate_handler, is_passive)
   }
 }
