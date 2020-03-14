@@ -44,7 +44,7 @@ function tip (node, text, offset = 5) {
   on(node, 'mouseenter', onmouseenter)
   on(node, 'mouseleave', onmouseleave)
 
-  return RACTIVE { teardown } : teardown
+  return RACTIVE ? { teardown } : teardown
 }
 
 export default tip

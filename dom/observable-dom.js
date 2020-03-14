@@ -18,7 +18,7 @@ export function section (G, name, fn) {
   var section_name = typeof name == 'string' ? name : (fn = name, random_id())
   let el = this[section_name] || (this[section_name] = value())
   if (typeof fn === 'function') {
-    let local_ctx = get_context(section_name + '_ctx')
+    let local_ctx = todo_get_context(section_name + '_ctx')
     G.z(() => local_ctx.cleanup())
     el(fn.call(this, local_ctx))
   } else {
@@ -27,15 +27,4 @@ export function section (G, name, fn) {
   G._sections[name] = __debug()
 
   return el
-}
-
-function get_context (G, el) {
-  error('not implemented')
-  var ctx =
-    typeof el === 'object' ? (el_ctx(el) || el._G = new_ctx(G)) :
-    typeof el === 'string' ? G._ctx[el] ||
-  // if (typeof el !== 'string') el = el_ctx(el)
-  // return
-  // this[ns] || (this[ns] = ctx = new_ctx({h, s}),
-  //   h.x.push(() => { ctx.cleanup() }), ctx) // return the ctx, not the return value of push
 }

@@ -22,7 +22,7 @@ function floatingTip (node, text, width) {
     var u = ANCIENT && IS_IE ? event.clientY + doc_el.scrollTop : e.pageY
     var l = ANCIENT && IS_IE ? event.clientX + doc_el.scrollLeft : e.pageX
     set_style(T, {
-      top: u - height
+      top: u - height,
       left: l + left
     })
   }

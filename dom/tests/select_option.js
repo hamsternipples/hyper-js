@@ -16,6 +16,7 @@ function select_option ({G, C, h, t, c, v, m}) {
     h('.output',
       'selected: ',
       t(selected, (val) => val ? h('b', val) : h('i', '(none)'))
+    )
   )
 }
 

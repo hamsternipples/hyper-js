@@ -82,7 +82,9 @@ qunit.start()
 // ===========
 // ===========
 
-export { qunit, syn, test: qunit.test, module: qunit.module }
+
+const { test, module } = qunit
+export { qunit, syn, test, module }
 
 const js_id = new RegExp(/[\w]+/)
 

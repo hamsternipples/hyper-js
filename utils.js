@@ -64,7 +64,7 @@ export function concat (arr1, arr2) {
   return res
 }
 
-export function empty_array (n, init_value = 0) {
+export function empty_array (n = 0, init_value = 0) {
   var array = Array(n)
   while (n-- > 0) array[n] = typeof init_value === 'function' ? init_value(n) : init_value
   return array
@@ -74,12 +74,12 @@ export const array_idx = (len, idx) => idx < 0 ? len + idx : idx
 
 // same as lodash.compact, but does the compaction inline on the same array by resizing it
 export function compact (array) {
-  var i = -1,
-      len = array.length,
-      idx = -1
-
+  var i = -1
+  var len = array.length
+  var idx = -1
+  var value
   while (++i < len) {
-    var value = array[i]
+    value = array[i]
     if (value) {
       if (i !== ++idx) array[idx] = value
     }
@@ -90,7 +90,9 @@ export function compact (array) {
 
 // removes (using splice) by strict-comparison all of `value` (default: null) from an array
 export function remove_every (array, value = null) {
-  var i = -1, len = array.length, to_remove = 0
+  var i = -1
+  var len = array.length
+  var to_remove = 0
   while (++i < len) {
     while (array[i + to_remove] === value) to_remove++
     if (to_remove > 0) {
@@ -225,7 +227,9 @@ export function merge (...objs) {
 
 // merges all of the properties from `obj[1 .. *]` into `obj[0]` and returns `obj[0]`
 export function extend (...obj) {
-  return Object.assign(...obj)
+  return DEBUG && !obj.length
+    ? error(`don't call extend with 0 arguments`)
+    : Object.assign(...obj)
 }
 
 export { extend as assign }
@@ -303,6 +307,6 @@ export function after (seconds, cb, ...args) {
   let id = setTimeout(() => {
     if (typeof cb === 'function') cb(...args)
   }, seconds * 1000)
-  if (!cb) return new  Promise((resolve) => cb = rexolve)
+  if (!cb) return new  Promise((resolve) => cb = resolve)
   return id
 }
