@@ -1,6 +1,12 @@
 import { error, is_array, int } from '@hyper/utils'
-import { win, doc, getComputedStyle, customElements, setTimeout } from '@hyper/global'
-export { win, doc, getComputedStyle, customElements, setTimeout }
+
+import { win, doc, nav, ua, raf } from '@hyper/global'
+import { getComputedStyle, customElements } from '@hyper/global'
+import { setInterval, clearInterval, setTimeout, clearTimeout } from '@hyper/global'
+
+export { win, doc, nav, ua, raf }
+export { getComputedStyle, customElements }
+export { setInterval, clearInterval, setTimeout, clearTimeout }
 
 export const doc_el = doc.documentElement
 export const body = doc.body
@@ -114,4 +120,27 @@ export function dispatch_event (element, event, val) {
 export function prevent_default (event) {
   event && (event.preventDefault(), event.stopImmediatePropagation())
   return false
+}
+
+export function dom_loaded (callback) {
+  if (ANCIENT) {
+    /* Mozilla, Chrome, Opera */
+    if (doc.addEventListener) {
+      doc.addEventListener('DOMContentLoaded', callback)
+    }
+    /* Safari, iCab, Konqueror */
+    else if (ANCIENT && /KHTML|WebKit|iCab/i.test(ua)) {
+      var DOMLoadTimer = setInterval(function () {
+        if (/loaded|complete/i.test(doc.readyState)) {
+          callback()
+          clearInterval(DOMLoadTimer)
+        }
+      }, 10)
+    }
+    /* Other web browsers */
+    else win.onload = callback
+  } else {
+    if (doc.body) raf(callback)
+    else on(win, 'DOMContentLoaded', callback)
+  }
 }

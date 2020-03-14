@@ -1,5 +1,6 @@
 import { h, set_style } from '@hyper/dom/hyper-hermes'
 import { doc, body, doc_el, on, off, IS_IE } from '@hyper/dom-base'
+import { setInterval, clearInterval } from '@hyper/global'
 
 // @Cleanup: this code is pretty nasty. I think decorators/tip is a bit better.
 // someday, revisit this and update it if necessary, otherwise delete it.
@@ -54,7 +55,7 @@ function floatingTip (node, text, width) {
     if (T.offsetWidth > maxw) T.style.width = maxw + 'px'
     height = ~~T.offsetHeight + top
     clearInterval(T.timer)
-    T.timer = setInterval(function () { fade(1) }, timer)
+    T.timer = setInterval(() => fade(1), timer)
   }
 
   var fade = function (d) {

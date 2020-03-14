@@ -2,6 +2,7 @@
 // Cleanup: this imports a whole bunch of stuff.
 //          perhaps think about something maybe a little lighter.
 import obj_like from './lodash/isObject'
+import { setTimeout, clearTimeout } from '@hyper/global'
 
 export function noop () {}
 
@@ -308,5 +309,5 @@ export function after (seconds, cb, ...args) {
     if (typeof cb === 'function') cb(...args)
   }, seconds * 1000)
   if (!cb) return new  Promise((resolve) => cb = resolve)
-  return id
+  return () => clearTimeout(id)
 }

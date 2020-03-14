@@ -10,7 +10,7 @@ export default function onScroll (el, percent_or_px, handler) {
   let body = el && el.scrollHeight ? el : body
   let throttled = debounce(_onScroll, 100, {leading: true, trailing: true, maxWait: 200})
   // let throttled = () => { console.log('scroll?'); _throttled.apply(this, arguments) }
-  let timeout
+  let cancel
 
   on(_el, 'scroll', throttled)
   let obj = {
@@ -19,14 +19,14 @@ export default function onScroll (el, percent_or_px, handler) {
     }
   }
   after(1, () => {
-    if (timeout) clearTimeout(timeout)
+    if (cancel) cancel()
     throttled()
   })
 
   return obj
 
   function _onScroll (e) {
-    if (obj.working) return timeout ? null : timeout = after(0.01, throttled)
+    if (obj.working) return cancel ? null : cancel = after(0.01, throttled)
     let rect = bounding_rect(body)
     let bottom_px = win.pageYOffset + win.innerHeight
 

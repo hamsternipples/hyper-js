@@ -14,7 +14,7 @@ import { each, call_each, every } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
 import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
 
-import { win, doc, customElements } from '@hyper/dom-base'
+import { win, doc, customElements } from '@hyper/global'
 import { isNode, txt, comment, cE } from '@hyper/dom-base'
 import { lookup_parent_with_attr } from '@hyper/dom-base'
 import { Node_prototype } from '@hyper/dom-base'

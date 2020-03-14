@@ -8,10 +8,9 @@ import ResizeSensor from '@hyper/dom/resize-sensor'
 // @Encapsusation: the plugin should make its own h context instaed of using the global one.
 import { h } from '@hyper/dom/hyper-hermes'
 import { doc, body, win, base_path } from '@hyper/dom-base'
-import { isNode, getElementById } from '@hyper/dom-base'
+import { dom_loaded, isNode, getElementById } from '@hyper/dom-base'
 import { new_ctx, el_ctx, global_ctx } from '@hyper/dom/hyper-ctx'
-
-const raf = win.requestAnimationFrame
+import { raf } from '@hyper/global'
 
 function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _onload, _afterload) {
   let tmp, mutationObserver, id, G, ctx, E, width, height, _dpr, args
@@ -164,8 +163,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
       })
     }
 
-    if (doc.body) raf(loader)
-    else win.addEventListener('DOMContentLoaded', loader, false)
+    dom_loaded(loader)
   })(_onload)
 
   return args
