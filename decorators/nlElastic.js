@@ -1,8 +1,8 @@
 
-import { each, assign, next_tick, int } from '@hyper/utils'
-import { win, body, getComputedStyle } from '@hyper/dom/dom-base'
-import { on, off } from '@hyper/dom/dom-base'
-import { get_prop_value, int_prop_value, sum_prop_values } from '@hyper/dom/dom-base'
+import { each, assign, int, next_tick } from '@hyper/utils'
+import { win, body, getComputedStyle } from '@hyper/dom-base'
+import { on, off } from '@hyper/dom-base'
+import { get_prop_value, int_prop_value, sum_prop_values } from '@hyper/dom-base'
 
 import raf from '@hyper/dom/request-animation-frame'
 

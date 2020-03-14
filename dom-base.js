@@ -1,13 +1,10 @@
 import { error, is_array, int } from '@hyper/utils'
+import { win, doc, getComputedStyle, customElements, setTimeout } from '@hyper/global'
+export { win, doc, getComputedStyle, customElements, setTimeout }
 
-// commonly used globals exported (to save a few bytes)
-export const win = window
-export const doc = win.document
 export const doc_el = doc.documentElement
 export const body = doc.body
 export const IS_IE = doc.all ? true : false
-export const getComputedStyle = win.getComputedStyle
-export const customElements = win.customElements
 export const location = doc.location
 export const IS_LOCAL = ~location.host.indexOf('localhost')
 export const base_path = location.pathname

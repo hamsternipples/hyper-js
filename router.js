@@ -1,7 +1,7 @@
 import Route from './route'
 import { assign, isEmpty } from '@hyper/utils'
 import { parseUri, parseQS, stringifyQS, stringifyHash, joinPaths } from '@hyper/router-utils'
-import { scroll_to, lookup_parent_element } from '@hyper/dom/dom-base'
+import { scroll_to, lookup_parent_element } from '@hyper/dom-base'
 
 import EventEmitter from './drip/emitter'
 

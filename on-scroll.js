@@ -1,6 +1,6 @@
 import debounce from './lodash/debounce'
 import { after } from '@hyper/utils'
-import { win, body, on, off, bounding_rect } from '@hyper/dom/dom-base'
+import { win, body, on, off, bounding_rect } from '@hyper/dom-base'
 
 // !!! this most likely breaks something !!!
 // please review...

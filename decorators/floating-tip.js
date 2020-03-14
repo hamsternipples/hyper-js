@@ -1,5 +1,5 @@
 import { h, set_style } from '@hyper/dom/hyper-hermes'
-import { doc, body, doc_el, on, off, IS_IE } from '@hyper/dom/dom-base'
+import { doc, body, doc_el, on, off, IS_IE } from '@hyper/dom-base'
 
 // @Cleanup: this code is pretty nasty. I think decorators/tip is a bit better.
 // someday, revisit this and update it if necessary, otherwise delete it.

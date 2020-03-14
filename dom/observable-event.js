@@ -1,7 +1,7 @@
 
 import { error, each } from '@hyper/utils'
 import { is_obv, ensure_obv, bind2, transform, compute } from '@hyper/dom/observable'
-import { on, off, dispatch_event, prevent_default } from '@hyper/dom/dom-base'
+import { on, off, dispatch_event, prevent_default } from '@hyper/dom-base'
 
 
 // listen to any event, reading `attr` and calling `listener` with the value.

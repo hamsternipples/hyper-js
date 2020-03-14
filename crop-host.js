@@ -1,4 +1,4 @@
-import { doc, doc_el, body, win, bounding_rect } from '@hyper/dom/dom-base'
+import { doc, doc_el, body, win, bounding_rect } from '@hyper/dom-base'
 
 import CropAreaCircle from './crop-area-circle'
 import CropAreaSquare from './crop-area-square'

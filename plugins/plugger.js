@@ -21,7 +21,7 @@ function plugger (starting_panel, C = {}, D = {}) {
 }
 
 // this should't be here:
-// import { win } from '@hyper/dom/dom-base'
+// import { win } from '@hyper/dom-base'
 // win.plugger = plugger
 
 export default plugger

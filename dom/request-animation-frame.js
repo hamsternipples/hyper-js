@@ -1,4 +1,4 @@
-import { win } from './dom-base'
+import { win, setTimeout } from '@hyper/dom-base'
 
 var requestAnimationFrame = win.requestAnimationFrame || (ANCIENT &&
   win.mozRequestAnimationFrame ||

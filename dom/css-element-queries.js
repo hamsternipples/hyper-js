@@ -6,7 +6,7 @@
 
 import requestAnimationFrame from './request-animation-frame'
 import ResizeSensor from './resize-sensor'
-import { doc, getComputedStyle } from './dom-base'
+import { doc, getComputedStyle } from '@hyper/dom-base'
 
 // TODO: make a universal dom-loaded event to listen to (and delete the one contained here)
 // TODO: use doc/win from dom-base

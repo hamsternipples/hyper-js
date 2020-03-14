@@ -11,13 +11,13 @@ import { is_obv } from './observable'
 import { observe_event, add_event } from './observable-event'
 import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/utils'
 import { each, call_each, every } from '@hyper/utils'
-import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
+import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
 
-import { win, doc, customElements } from './dom-base'
-import { isNode, txt, comment, cE } from './dom-base'
-import { lookup_parent_with_attr } from './dom-base'
-import { Node_prototype } from './dom-base'
+import { win, doc, customElements } from '@hyper/dom-base'
+import { isNode, txt, comment, cE } from '@hyper/dom-base'
+import { lookup_parent_with_attr } from '@hyper/dom-base'
+import { Node_prototype } from '@hyper/dom-base'
 
 // add your own (or utilise this to make your code smaller!)
 export let short_attrs = { s: 'style', c: 'class', for: 'htmlFor' }

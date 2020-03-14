@@ -3,8 +3,8 @@ import { define_getter, define_value } from '@hyper/utils'
 import { is_array } from '@hyper/utils'
 // import { random_id } from '@hyper/utils'
 import { h, s } from '@hyper/dom/hyper-hermes'
-import { doc, getElementById, isNode } from '@hyper/dom/dom-base'
-import { Node_prototype } from '@hyper/dom/dom-base'
+import { doc, getElementById, isNode } from '@hyper/dom-base'
+import { Node_prototype } from '@hyper/dom-base'
 
 // default obv functions provided
 import { value, transform, compute } from '@hyper/dom/observable'

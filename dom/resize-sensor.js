@@ -6,7 +6,7 @@
 
 import requestAnimationFrame from './request-animation-frame'
 import { h } from './hyper-hermes'
-import { get_style_prop } from './dom-base'
+import { get_style_prop } from '@hyper/dom-base'
 
 
 /**

@@ -1,13 +1,13 @@
 
 // var Conductor = require('@hyper/conductor')
 // var daFunk = require('da-funk')
-var slice = [].slice
 
 // import EventEmitter from '@hyper/drip/emitter'
 import EventEmitter from '@hyper/drip/enhanced'
 
 // import { mergeDeep } from '@hyper/utils'
-import { extend, each, is_array } from '@hyper/utils'
+import { extend, each, is_array, slice } from '@hyper/utils'
+import { next_tick } from '@hyper/dom-base'
 
 class Ambition extends EventEmitter {
   constructor (id, options) {

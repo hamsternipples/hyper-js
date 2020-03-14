@@ -1,5 +1,5 @@
 import { value } from '@hyper/lib/dom/observable'
-import { comment } from '@hyper/lib/dom/dom-base'
+import { comment } from '@hyper/lib/dom-base'
 import { new_ctx, el_ctx } from '@hyper/lib/dom/hyper-ctx'
 import { random_id, __debug } from '@hyper/lib/utils'
 

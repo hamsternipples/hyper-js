@@ -1,6 +1,6 @@
 
 import { h, set_style } from '@hyper/dom/hyper-hermes'
-import { body, on, off, bounding_rect } from '@hyper/dom/dom-base'
+import { body, on, off, bounding_rect } from '@hyper/dom-base'
 
 function tip (node, text, offset = 5) {
   var el

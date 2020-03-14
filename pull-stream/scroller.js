@@ -4,7 +4,7 @@ var Pause = require('pull-pause')
 
 import { is_fn, noop, error } from '@hyper/utils'
 import { value as Obv } from '@hyper/dom/observable'
-import { win, on, off, bounding_rect, getComputedStyle } from '@hyper/dom/dom-base'
+import { win, on, off, bounding_rect, getComputedStyle } from '@hyper/dom-base'
 
 
 var next = is_fn(setImmediate) ? setImmediate : setTimeout

@@ -11,10 +11,10 @@ TODO:
 - when starting without a defined base, it should automatically detect the base
 */
 
-import { win, location, origin, base_path } from '@hyper/dom/dom-base'
-import { href_pathname, href_query, href_hash } from '@hyper/dom/dom-base'
-import { lookup_parent_with_attr } from '@hyper/dom/dom-base'
-import { on, off, prevent_default, which } from '@hyper/dom/dom-base'
+import { win, location, origin, base_path } from '@hyper/dom-base'
+import { href_pathname, href_query, href_hash } from '@hyper/dom-base'
+import { lookup_parent_with_attr } from '@hyper/dom-base'
+import { on, off, prevent_default, which } from '@hyper/dom-base'
 import { noop, slasher, is_array, error } from '@hyper/utils'
 import isEqual from '@hyper/isEqual'
 

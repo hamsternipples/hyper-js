@@ -3,7 +3,7 @@ import PromiseQueue from '@hyper/lib/promise-queue'
 
 import pluginBoilerplate from '@hyper/lib/plugins/plugin-boilerplate'
 import { h as hh } from '@hyper/lib/dom/hyper-hermes'
-import { doc, body } from '@hyper/lib/dom/dom-base'
+import { doc, body } from '@hyper/lib/dom-base'
 import { value, transform, compute } from '@hyper/lib/dom/observable'
 import { attribute } from '@hyper/lib/dom/observable-event'
 import requestAnimationFrame from '@hyper/lib/dom/request-animation-frame'

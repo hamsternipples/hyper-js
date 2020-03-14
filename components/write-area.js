@@ -1,7 +1,7 @@
 
 import nl_elastic from '@hyper/decorators/nlElastic'
 import { is_str, after } from '@hyper/utils'
-import { prevent_default } from '@hyper/dom/dom-base'
+import { prevent_default } from '@hyper/dom-base'
 
 import './write-area.less'
 
