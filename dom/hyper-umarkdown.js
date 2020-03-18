@@ -11,6 +11,8 @@
  * Version: 0.3.4
  */
 
+// @Incomplete: everything. this was never finished, and instead went for a simplification of marked
+
 /*jslint browser: true, node: true, plusplus: true, indent: 2, regexp: true, ass: true */
 /*global ActiveXObject, define */
 
