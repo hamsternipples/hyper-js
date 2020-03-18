@@ -2,8 +2,10 @@
 
 import { define_prop, define_props, define_value, define_getter } from '@hyper/utils'
 import { remove_every as compactor, error } from '@hyper/utils'
-import { is_array } from '@hyper/utils'
+import { is_array, is_obv, is_obv_type } from '@hyper/utils'
 import { emit, remove } from '@hyper/listeners'
+
+export { is_obv, is_obv_type }
 
 // knicked from: https://github.com/dominictarr/observable/blob/master/index.js
 // * exported classes
@@ -255,10 +257,6 @@ export function boolean (obv, truthy, falsey) {
       (val) => val == truthy ? true : false
     )
   )
-}
-
-export function is_obv (obv, type = null) {
-  return typeof obv === 'function' && ((!type && obv._obv) || obv._obv === type)
 }
 
 export function obv_property (obj, key, o) {

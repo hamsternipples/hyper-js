@@ -30,6 +30,7 @@ export function global_ctx () {
     },
     m: update_obv,
     V: obj_value,
+    N: new_ctx,
     z: h.z,
   }, () => {
     // bind the global ctx to a meta tag in the head called 'global_ctx'

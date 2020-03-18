@@ -3,8 +3,11 @@
 //          perhaps think about something maybe a little lighter.
 import obj_like from './lodash/isObject'
 import { setTimeout, clearTimeout } from '@hyper/global'
+import { Array, is_array } from '@hyper/global'
+import { Object, noop } from '@hyper/global'
 
-export function noop () {}
+export { is_array, noop }
+
 
 export function error (message, type = Error) {
   if (message instanceof Error) throw message
@@ -18,8 +21,8 @@ export function __debug (msg) {
 }
 
 export const int = (s) => parseInt(s, 10)
+export const hex = (s) => parseInt(s, 16)
 
-export const is_array = Array.isArray
 export const is_empty = (value) => (!value || typeof value !== 'object') ? !value : !(is_array(value) ? value : Object.keys(value)).length
 
 export const is_fn = (fn) => typeof fn === 'function'
@@ -37,6 +40,10 @@ export { is_num as is_number }
 export const is_bool = (bool) => typeof bool === 'boolean'
 export { is_bool as is_boolean }
 
+export const is_obv = (obv) => typeof obv === 'function' && obv._obv
+export const is_obv_type = (obv, type) => typeof obv === 'function' && (obv._obv === type)
+
+export const slice = [].slice
 
 // micro-optimization: http://jsperf.com/for-vs-foreach/292
 export function each (arr, fn, _this = arr, i) {
