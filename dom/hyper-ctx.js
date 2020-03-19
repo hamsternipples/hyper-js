@@ -15,7 +15,8 @@ import { update_obv } from '@hyper/dom/observable-event'
 // since it's the global context, should it be cached somewhere?
 
 export function global_ctx () {
-  let el = getElementById('global_ctx') || new_ctx({
+  var ctx
+  var el = getElementById('global_ctx') || new_ctx({
     _id:0, ERROR: 'THIS IS THE GLOBAL CTX',
     o: {},
     h, s,
@@ -30,9 +31,10 @@ export function global_ctx () {
     },
     m: update_obv,
     V: obj_value,
-    N: new_ctx,
+    N: (fn) => new_ctx(ctx, fn),
     z: h.z,
-  }, () => {
+  }, (G) => {
+    ctx = G
     // bind the global ctx to a meta tag in the head called 'global_ctx'
     return doc.head.aC(h('meta#global_ctx'))
   })
@@ -87,6 +89,7 @@ export function new_ctx (G = global_ctx(), fn, ...args) {
     h: define_getter(() => ctx._h || (ctx._h = G.h.context())),
     s: define_getter(() => ctx._s || (ctx._s = G.s.context())),
     cleanupFuncs: define_value(cleanupFuncs),
+    N: define_value((fn) => new_ctx(ctx, fn)),
     c: define_value((obvs, compute_fn, obv) => {
       obv = compute(obvs, compute_fn)
       cleanupFuncs.push(obv.x)
