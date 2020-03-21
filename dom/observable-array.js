@@ -21,7 +21,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   pop () {
     if (!this.length) return
     this.emit('change', { type: 'pop' })
-    let ret = super.pop()
+    var ret = super.pop()
     this._up()
     return ret
   }
@@ -29,7 +29,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   push (...items) {
     if (!items.length) return this.length
     this.emit('change', { type: 'push', values: items })
-    let ret = super.push(...items)
+    var ret = super.push(...items)
     this._up()
     return ret
   }
@@ -43,41 +43,39 @@ export default class ObservableArray extends MixinEmitter(Array) {
   shift () {
     if (!this.length) return
     this.emit('change', { type: 'shift' })
-    let ret = super.shift()
+    var ret = super.shift()
     this._up()
     return ret
   }
 
   swap (from_idx, to_idx) {
     this.emit('change', {type: 'swap', from: from_idx, to: to_idx })
-    // let el = super.splice(from_idx, 1)
-    // super.splice(to_idx, 0, el[0])
     swap(this, to_idx, from_idx)
   }
 
   sort (compare) {
     // implementation of selection sort
     // (it's more compares, but the fewest number of swaps, which is better for dom performance)
-    if (this.length <= 1) return this
-    let i = 0, j, k, a = this, l = a.length
-    for (; i < l; i++) {
+    var i = 0, j, k, arr = this, len = arr.length
+    if (l <= 1) return arr
+    for (; i < len; i++) {
       // smallest index val
       k = i
-      for (j = i+1; j < l; j++) {
-        if (compare(a[j], a[k]) <= 0) k = j
+      for (j = i+1; j < len; j++) {
+        if (compare(arr[j], arr[k]) <= 0) k = j
       }
 
       if (k !== i) {
         this.emit('change', {type: 'swap', from: k, to: i })
-        swap(a, i, k)
+        swap(arr, i, k)
       }
     }
 
-    return this
+    return arr
   }
 
   shuffle () {
-    for (let i = 0, len = this.length; i < len;) {
+    for (var i = 0; i < this.length;) {
       this.swap(i, Math.floor(Math.random() * (++i)))
     }
   }
@@ -106,7 +104,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   move (from_idx, to_idx) {
     this.emit('change', { type: 'move', from: from_idx, to: to_idx })
-    let el = super.splice(from_idx, 1)
+    var el = super.splice(from_idx, 1)
     super.splice(to_idx, 0, el[0])
     return this
   }
@@ -120,7 +118,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   remove (idx) {
     if (typeof idx !== 'number') {
-      let iidx = this.indexOf(idx)
+      var iidx = this.indexOf(idx)
       if (~iidx) idx = iidx
       else return this
     }
@@ -133,7 +131,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   splice (idx, remove, ...add) {
     if (idx === undefined || (remove !== undefined && (+idx >= this.length || +remove <= 0))) return []
     this.emit('change', { type: 'splice', idx, remove, add })
-    let ret = super.splice(idx, remove, ...add)
+    var ret = super.splice(idx, remove, ...add)
     this._up()
     return ret
   }
@@ -141,7 +139,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   unshift (...items) {
     if (!items.length) return this.length
     this.emit('change', { type: 'unshift', values: items })
-    let ret = super.unshift(...items)
+    var ret = super.unshift(...items)
     this._up()
     return ret
   }
@@ -158,7 +156,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   //            lodash/set and lodash/invoke dependencies aren't pulled in.
   //            (it was only used once in a project from a while ago)
   // setPath (idx, path, value) {
-  //   let obj = this[idx]
+  //   var obj = this[idx]
   //   // in case it's an observable, no need to emit the event
   //   if (obj.observable === 'object') invoke(obj, path, value)
   //   else {
@@ -177,7 +175,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 // this function is to replicate changes made to one obv arr to another one(s)
 export function ObservableArrayApplies (oarr, ...arr) {
   oarr.on('change', (e) => {
-    let a, t
+    var a, t
     switch (e.type) {
       case 'swap':
         for (a of arr) {
