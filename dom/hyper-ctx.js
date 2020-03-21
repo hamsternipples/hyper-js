@@ -103,7 +103,7 @@ export function new_ctx (G = global_ctx(), fn, ...args) {
     })
   })
 
-  let mo, el = fn(ctx, ...args)
+  let el = fn(ctx, ...args)
 
   if (DEBUG && is_array(el)) error(`this will assign a context to your element, so an array won't work. instead, wrap these elements in a container element`)
   if (DEBUG && !isNode(el) && el != null && !el.then) error('you must return an element when creating a new context')

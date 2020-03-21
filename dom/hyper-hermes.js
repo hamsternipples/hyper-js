@@ -316,11 +316,19 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       var type = ev.type
       if (type == 'unshift') {
         for (i = ev.values.length - 1; i >= 0; i--)
-          e.insertBefore(isNode(o = ev.values[i]) ? o : txt(o), arr[0])
+          e.insertBefore(
+            isNode(o = make_node(e, ev.values[i], cleanupFuncs))
+              ? o
+              : txt(o), arr[0]
+          )
       }
       else if (type == 'push') {
         for (i = 0; i < ev.values.length; i++)
-          e.insertBefore(isNode(o = ev.values[i]) ? o : txt(o), arr[arr.length + ev.values.length - i - 1])
+          e.insertBefore(
+            isNode(o = make_node(e, ev.values[i], cleanupFuncs))
+              ? o
+              : txt(o), arr[arr.length + ev.values.length - i - 1]
+          )
       }
       else if (type == 'pop') {
         e.removeChild(arr[len-1])
