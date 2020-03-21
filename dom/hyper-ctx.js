@@ -31,7 +31,7 @@ export function global_ctx () {
     },
     m: update_obv,
     V: obj_value,
-    N: (fn) => new_ctx(ctx, fn),
+    N: (fn, ...args) => new_ctx(ctx, fn, ...args),
     z: h.z,
   }, (G) => {
     ctx = G
@@ -89,7 +89,7 @@ export function new_ctx (G = global_ctx(), fn, ...args) {
     h: define_getter(() => ctx._h || (ctx._h = G.h.context())),
     s: define_getter(() => ctx._s || (ctx._s = G.s.context())),
     cleanupFuncs: define_value(cleanupFuncs),
-    N: define_value((fn) => new_ctx(ctx, fn)),
+    N: define_value((fn, ...args) => new_ctx(ctx, fn, ...args)),
     c: define_value((obvs, compute_fn, obv) => {
       obv = compute(obvs, compute_fn)
       cleanupFuncs.push(obv.x)
