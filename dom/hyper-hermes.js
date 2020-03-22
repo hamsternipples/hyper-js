@@ -21,11 +21,21 @@ import { lookup_parent_with_attr } from '@hyper/dom-base'
 import { Node_prototype } from '@hyper/dom-base'
 
 // add your own (or utilise this to make your code smaller!)
-export let short_attrs = { s: 'style', c: 'class', for: 'htmlFor' }
+export let short_attrs = {
+  s: 'style',
+  c: 'class',
+  class: 'className',
+  for: 'htmlFor',
+  html: 'innerHTML'
+}
 // however, when using setAttribute, these need to be reversed
-export let short_attrs_rev = { style: 's', className: 'class', htmlFor: 'for' }
+// export let short_attrs_rev = { style: 's', className: 'class', htmlFor: 'for', innerHTML: 'html' }
+export let short_attrs_rev = ((obj, k, ret = {}) => {
+  every(obj, (val, k) => ret[val] = k)
+  return ret
+})(short_attrs)
 
-// can be used to save bytes:
+// common_tags can be used to save bytes:
 // h(1,{value:11})
 //     vs.
 // h('input',{value:11})
