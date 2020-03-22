@@ -135,6 +135,10 @@ function hyper_hermes (create_element) {
 // export let roadtrips = new Set
 // this is so that custom attributes can be used to define custom behaviour
 export let custom_attrs = {
+  decorators: (cleanupFuncs, e, fn) => {
+    if (is_array(fn)) each(fn, decorator => cleanupFuncs.z(decorator(e)))
+    else cleanupFuncs.z(fn(e))
+  },
   boink: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {boink: fn}) },
   press: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {press: fn}) },
   hover: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {hover: fn}) },
