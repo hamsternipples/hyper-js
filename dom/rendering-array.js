@@ -1,7 +1,7 @@
 
 import { empty_array, extend, swap, define_prop, define_getter, error } from '@hyper/utils'
 import { is_obv, value } from '@hyper/dom/observable'
-import { make_node } from '@hyper/dom/hyper-hermes'
+import { make_child_node } from '@hyper/dom/hyper-hermes'
 import { comment } from '@hyper/dom-base'
 import ObservableArray from '@hyper/dom/observable-array'
 
@@ -248,7 +248,7 @@ export default class RenderingArray extends ObservableArray {
         el.then(v => {
           self[idx] = v
           var parent = el.parentNode
-          var node = make_node(parent, v, G.cleanupFuncs)
+          var node = make_child_node(parent, v, G.cleanupFuncs)
           if (DEBUG && !parent) error('promise unable to insert itself into the dom because el does not have a parentNode')
           else parent.rC(node, el), G.z(() => node.rm())
         })

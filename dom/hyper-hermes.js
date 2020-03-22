@@ -104,13 +104,13 @@ function hyper_hermes (create_element) {
         if (is_fn(l.then)) {
           e.aC(r = comment(DEBUG ? '1:promise-value' : 1))
           l.then((v) => {
-            let node = make_node(e, v, cleanupFuncs)
+            let node = make_child_node(e, v, cleanupFuncs)
             if (DEBUG && r.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
             else e.rC(node, r), z(() => node.rm())
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
       } else if (is_fn(l)) {
-        make_obv_node(e, l, cleanupFuncs)
+        make_obv_child_node(e, l, cleanupFuncs)
       } else if (DEBUG) {
         error('unknown/unsupported item being appended to element')
       }
@@ -296,17 +296,17 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
   }
 }
 
-export function arrayFragment (e, arr, cleanupFuncs) {
+export function arrayFragment (parent, arr, cleanupFuncs) {
   var v, frag = doc.createDocumentFragment()
-  var activeElement = (el) => el === (e.activeElement || doc.activeElement)
+  var activeElement = (el) => el === (parent.activeElement || doc.activeElement)
   // function deepActiveElement() {
   //   let a = doc.activeElement
   //   while (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement
   //   return a
   // }
 
-  // append nodes to the fragment, with parent node as e
-  for (v of arr) frag.aC(make_node(e, v, cleanupFuncs))
+  // append nodes to the fragment, with parent node as parent
+  for (v of arr) frag.aC(make_child_node(parent, v, cleanupFuncs))
 
   if (arr.observable === 'array') {
     // TODO: add a comment to know where the array begins and ends (a la angular)
@@ -316,44 +316,44 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       var type = ev.type
       if (type == 'unshift') {
         for (i = ev.values.length - 1; i >= 0; i--) {
-          o = make_node(e, ev.values[i], cleanupFuncs)
-          e.insertBefore(isNode(o) ? o : txt(o), arr[0])
+          o = make_child_node(parent, ev.values[i], cleanupFuncs)
+          parent.iB(isNode(o) ? o : txt(o), arr[0])
         }
       }
       else if (type == 'push') {
         for (i = 0; i < ev.values.length; i++) {
-          o = make_node(e, ev.values[i], cleanupFuncs)
-          e.insertBefore(
+          o = make_child_node(parent, ev.values[i], cleanupFuncs)
+          parent.iB(
             isNode(o) ? o : txt(o),
             arr[arr.length + ev.values.length - i - 1]
           )
         }
       }
       else if (type == 'pop') {
-        e.removeChild(arr[len-1])
+        arr.rm([len-1])
       }
       else if (type == 'shift') {
-        e.removeChild(arr[0])
+        arr.rm([0])
       }
       else if (type == 'splice') {
         if ((j = ev.idx) < 0) j += len // -idx
         // experimental:
         if (ev.remove) for (i = 0; i < ev.remove; i++) {
           if (o = arr[j++]) {
-            oo = make_node(e, ev.add[i], cleanupFuncs)
-            if (oo) e.replaceChild(isNode(oo) ? oo : txt(oo), o)
-            else e.removeChild(o)
+            oo = make_child_node(parent, ev.add[i], cleanupFuncs)
+            if (oo) parent.rC(isNode(oo) ? oo : txt(oo), o)
+            else o.rm()
           }
         }
         if (ev.add) for (i = 0; i < ev.add.length; i++) {
-          o = make_node(e, ev.add[i], cleanupFuncs)
-          e.insertBefore(isNode(o) ? o : txt(o), arr[j])
+          o = make_child_node(parent, ev.add[i], cleanupFuncs)
+          parent.iB(isNode(o) ? o : txt(o), arr[j])
         }
-        // working (just in case replaceChild has some weird cases):
+        // working (just in case rC has some weird cases):
         // if (ev.remove) for (i = 0; i < ev.remove; i++)
-        //   if (o = arr[j++]) e.removeChild(o)
+        //   if (o = arr[j++]) o.rm()
         // if (ev.add) for (i = 0; i < ev.add.length; i++)
-        //   e.insertBefore(isNode(o = ev.add[i]) ? o : txt(o), arr[j])
+        //   parent.iB(isNode(o = ev.add[i]) ? o : txt(o), arr[j])
 
       }
       else if (type == 'sort') {
@@ -364,23 +364,23 @@ export function arrayFragment (e, arr, cleanupFuncs) {
           o = arr[i]
           if (i !== (j = oo.indexOf(o))) {
             if (activeElement(o) || o.focused === 1) i = 1
-            e.removeChild(o)
-            e.insertBefore(o, arr[i - 1])
+            o.rm()
+            parent.iB(o, arr[i - 1])
             if (i === 1) o.focus(), o.focused = 0
           }
         }
       }
       else if (type == 'replace') {
-        o = make_node(e, ev.val, cleanupFuncs)
+        o = make_child_node(parent, ev.val, cleanupFuncs)
         oo = ev.old
         if (activeElement(o) || o.focused === 1) i = 1
         if (activeElement(oo)) oo.focused = 1
-        e.replaceChild(o, oo)
+        parent.rC(o, oo)
         if (i === 1) o.focus(), o.focused = 0
       }
       else if (type == 'insert') {
         if ((i = ev.idx) < 0) i += len // -idx
-        e.insertBefore(ev.val, make_node(e, arr[i], cleanupFuncs))
+        parent.iB(ev.val, make_child_node(parent, arr[i], cleanupFuncs))
       }
       else if (type == 'reverse') {
         for (i = 0, j = +(arr.length / 2); i < j; i++)
@@ -391,7 +391,7 @@ export function arrayFragment (e, arr, cleanupFuncs) {
         if ((j = ev.to) < 0) j += len   // -idx
         o = arr[i]
         if (activeElement(o)) i = 1
-        e.insertBefore(o, arr[j])
+        parent.iB(o, arr[j])
         if (i === 1) o.focus()
       }
       else if (type == 'swap') {
@@ -403,25 +403,23 @@ export function arrayFragment (e, arr, cleanupFuncs) {
         o = arr[j]
         if (activeElement(o)) i = 1
         else if (activeElement(oo)) i = 2
-        e.replaceChild(ev.j, oo)
-        e.replaceChild(ev.k, o)
-        e.replaceChild(o, ev.j)
-        e.replaceChild(oo, ev.k)
+        parent.rC(ev.j, oo)
+        parent.rC(ev.k, o)
+        parent.rC(o, ev.j)
+        parent.rC(oo, ev.k)
         if (i === 1) o.focus()
         else if (i === 2) oo.focus()
       }
       else if (type == 'remove') {
         if ((i = ev.idx) < 0) i += len // -idx
-        // e.removeChild(arr[i])
         arr[i].rm()
       }
       else if (type == 'set') {
         if ((i = ev.idx) < 0) i += len // -idx
-        e.replaceChild(ev.val, arr[i])
+        parent.rC(ev.val, arr[i])
       }
       else if (type == 'empty') {
         for (i = 0; i < arr.length; i++)
-          // e.removeChild(arr[i])
           arr[i].rm()
       }
       else if (DEBUG) {
@@ -429,7 +427,7 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       }
     }
 
-    arr.parent = e
+    arr.parent = parent
     arr.on('change', onchange)
     cleanupFuncs.z(() => { arr.off('change', onchange) })
   }
@@ -471,54 +469,51 @@ export function new_svg_context (no_cleanup) {
   return ctx
 }
 
-// @Legibility: make variable name e, clearer
-export function make_node (e, v, cleanupFuncs, placeholder) {
+export function make_child_node (parent, v, cleanupFuncs, _placeholder) {
   return isNode(v) ? v
-    : is_array(v) ? arrayFragment(e, v, cleanupFuncs)
+    : is_array(v) ? arrayFragment(parent, v, cleanupFuncs)
     : is_fn(v) ? (
-      is_obv(v) ? make_obv_node(e, v, cleanupFuncs) : (() => {
-        while (is_fn(v)) v = v.call(e, e)
-        return make_node(e, v, cleanupFuncs)
+      is_obv(v) ? make_obv_child_node(parent, v, cleanupFuncs) : (() => {
+        while (is_fn(v)) v = v.call(parent, parent)
+        return make_child_node(parent, v, cleanupFuncs)
       })()
     )
     : v == null ? comment(DEBUG ? '0:null' : 0)
     : is_fn(v.then) ? (
       v.then((v, node) => {
-        node = make_node(e, v, cleanupFuncs)
-        if (DEBUG && placeholder.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
-        else e.rC(node, placeholder), cleanupFuncs.z(() => node.rm())
+        node = make_child_node(parent, v, cleanupFuncs)
+        if (DEBUG && _placeholder.parentNode !== parent) error('promise unable to insert itself into the dom because parentNode has changed')
+        else parent.rC(node, _placeholder), cleanupFuncs.z(() => node.rm())
       }),
-      placeholder = comment(DEBUG ? '2:promise-value' : 2)
+      _placeholder = comment(DEBUG ? '2:promise-value' : 2)
     )
     : txt(v)
 }
 
-// @Legibility: make variable name e, clearer
-export function make_obv_node (e, v, cleanupFuncs = []) {
+export function make_obv_child_node (parent, v, cleanupFuncs = []) {
   var r, o, nn, clean = [], placeholder
   if (is_fn(v)) {
     if (is_obv(v)) {
       // observable
-      e.aC(r = comment(DEBUG ? '3:obv-value' : 3))
-      e.aC(placeholder = comment(DEBUG ? '4:obv-bottom' : 4))
+      parent.aC(r = comment(DEBUG ? '3:obv-value' : 3))
+      parent.aC(placeholder = comment(DEBUG ? '4:obv-bottom' : 4))
       cleanupFuncs.z(v((val) => {
-        nn = make_node(e, val, cleanupFuncs)
+        nn = make_child_node(parent, val, cleanupFuncs)
         if (is_array(r)) {
           each(r, v => {
             // this removes all previous elements in the array before adding them below with the insertBefore
             if (v) {
-              if (v.then) v.then(e => e.rm())
+              if (v.then) v.then(parent => parent.rm())
               else if (isNode(v)) v.rm()
               else if (DEBUG) error('element in removal array is not a node')
             } else if (DEBUG) error('somehow a null value got saved into the removal array')
           })
-          // each(r, v => e.rm())
         } else if (r) {
-          if (DEBUG && r.parentNode !== e) error('obv unable to replace child node because parentNode has changed')
-          else e.rC(nn, r)
+          if (DEBUG && r.parentNode !== parent) error('obv unable to replace child node because parentNode has changed')
+          else parent.rC(nn, r)
         }
 
-        e.iB(nn, placeholder)
+        parent.iB(nn, placeholder)
         /*
         not totally sure this is working. I'm trying to save the resulting element back into the array that's used for removal. for example, imagine that I have a string or a number and I add it the dom, when I go to remove them, it won't know what elements they were.
         similarly, for promises, once they resolve, it should set the element in the array with the resolved node.
@@ -538,12 +533,12 @@ export function make_obv_node (e, v, cleanupFuncs = []) {
       }), /* cleanup fn -> */ () => (placeholder.rm(), r && is_array(r) ? each(r, r => r.rm()) : r.rm()))
     } else {
       // normal function
-      o = make_node(e, v, cleanupFuncs)
-      if (o != null) r = e.aC(o, cleanupFuncs)
+      o = make_child_node(parent, v, cleanupFuncs)
+      if (o != null) r = parent.aC(o, cleanupFuncs)
     }
-    r = make_node(e, r, cleanupFuncs)
+    r = make_child_node(parent, r, cleanupFuncs)
   } else {
-    r = make_node(e, v, cleanupFuncs)
+    r = make_child_node(parent, v, cleanupFuncs)
   }
   return r
 }
@@ -569,12 +564,12 @@ export function set_style (e, style, cleanupFuncs = []) {
 
 // shortcut to append multiple children (w/ cleanupFuncs)
 Node_prototype.iB = function (el, ref, cleanupFuncs) {
-  return this.insertBefore(make_obv_node(this, el, cleanupFuncs), ref)
+  return this.insertBefore(make_obv_child_node(this, el, cleanupFuncs), ref)
 }
 
 // shortcut to append multiple children (w/ cleanupFuncs)
 Node_prototype.aC = function (el, cleanupFuncs) {
-  return this.appendChild(isNode(el) ? (el.parentNode !== this ? el : undefined) : make_obv_node(this, el, cleanupFuncs))
+  return this.appendChild(isNode(el) ? (el.parentNode !== this ? el : undefined) : make_obv_child_node(this, el, cleanupFuncs))
 }
 
 // shortcut to replaceChild
@@ -589,7 +584,7 @@ Node_prototype.set = function (obj, cleanupFuncs) {
 
 // https://jsperf.com/remove-all-child-nodes/2.atom
 Node_prototype.empty = function (child) {
-  while (child = this.firstChild) this.removeChild(child)
+  while (child = this.firstChild) child.rm()
 }
 
 // enable disable classes (with timed undo)
