@@ -42,7 +42,7 @@ export const not = (observable) => transform(observable, _not)
 // }, 2000)
 
 
-export function prompter (msg, options, responder_fn) {
+export const prompter = (msg, options, responder_fn) => {
   var _val, __msg = msg, __options = options, __responder_fn = responder_fn, listeners = []
   if (typeof msg === 'function') __responder_fn = msg, __msg = null
   prompter.observable = 'prompt'
@@ -85,7 +85,7 @@ export function prompter (msg, options, responder_fn) {
 // TODO: since multiple responses can be given, get all responses (one for each listener) before calling the result_fn (error on timeout)
 //       - requires changing all3 to include the idx
 
-export function responder (msg, options, result_fn) {
+export const responder = (msg, options, result_fn) => {
   var _res, __msg = msg, __options = options, listeners = []
   if (typeof msg === 'function') result_fn = msg, __msg = null
   responder.observable = 'respond'

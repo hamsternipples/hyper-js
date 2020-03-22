@@ -13,7 +13,7 @@ import { random_id, __debug } from '@hyper/lib/utils'
 // the best thing would be to do both: store the named contexts in `G` and have local contexts as well.
 
 // a section, really is just an observable that provides a context, then cleans up that context when it's done
-export function section (G, name, fn) {
+export const section = (G, name, fn) => {
   error('not working properly after ctx changes')
   var section_name = typeof name == 'string' ? name : (fn = name, random_id())
   let el = this[section_name] || (this[section_name] = value())

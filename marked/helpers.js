@@ -15,7 +15,7 @@ const escapeReplacements = {
   "'": '&#39;'
 }
 const getEscapeReplacement = (ch) => escapeReplacements[ch]
-export function escape (html, encode) {
+export const escape = (html, encode) => {
   return escapeTestNoEncode.test(html)
     ? html.replace(escapeReplaceNoEncode, getEscapeReplacement)
     : html
@@ -23,7 +23,7 @@ export function escape (html, encode) {
 
 const unescapeTest = /&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/ig
 
-export function unescape (html) {
+export const unescape = (html) => {
   // explicitly match decimal, hex, and named HTML entities
   return html.replace(unescapeTest, (_, n) => {
     n = n.toLowerCase()
@@ -39,7 +39,7 @@ export function unescape (html) {
 
 
 const caret = /(^|[^\[])\^/g
-export function edit (regex, opt) {
+export const edit = (regex, opt) => {
   regex = regex.source || regex
   opt = opt || ''
   const obj = {
@@ -58,7 +58,7 @@ export function edit (regex, opt) {
 
 const nonWordAndColonTest = /[^\w:]/g
 const originIndependentUrl = /^$|^[a-z][a-z0-9+.-]*:|^[?#]/i
-export function cleanUrl (base, href) {
+export const cleanUrl = (base, href) => {
   if (base && !originIndependentUrl.test(href)) {
     href = resolveUrl(base, href)
   }
@@ -75,7 +75,7 @@ const justDomain = /^[^:]+:\/*[^/]*$/
 const protocol = /^([^:]+:)[\s\S]*$/
 const domain = /^([^:]+:\/*[^/]*)[\s\S]*$/
 
-export function resolveUrl (base, href) {
+export const resolveUrl = (base, href) => {
   if (!baseUrls[' ' + base]) {
     // we can ignore everything in base after the last slash of its path component,
     // but we might need to add _that_
@@ -106,7 +106,7 @@ export function resolveUrl (base, href) {
 
 export const noopTest = { exec: function noopTest () {} }
 
-// export function merge (obj) {
+// export const merge = (obj) => {
 //   let i = 1,
 //     target,
 //     key
@@ -126,7 +126,7 @@ export const noopTest = { exec: function noopTest () {} }
 // Remove trailing 'c's. Equivalent to str.replace(/c*$/, '').
 // /c*$/ is vulnerable to REDOS.
 // invert: Remove suffix of non-c chars instead. Default falsey.
-export function rtrim (str, c, invert) {
+export const rtrim = (str, c, invert) => {
   const l = str.length
   if (l === 0) {
     return ''
@@ -150,7 +150,7 @@ export function rtrim (str, c, invert) {
   return str.substr(0, l - suffLen)
 }
 
-export function findClosingBracket (str, b) {
+export const findClosingBracket = (str, b) => {
   if (str.indexOf(b[1]) === -1) {
     return -1
   }
@@ -173,6 +173,6 @@ export function findClosingBracket (str, b) {
 }
 
 // function to unescape text such as: \[notalink\]\(neither this\) -> [notalink](neither this)
-export function unescapes (text) {
+export const unescapes = (text) => {
   return text ? text.replace(/\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/g, '$1') : text
 }

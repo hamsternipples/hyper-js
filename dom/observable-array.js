@@ -173,7 +173,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 }
 
 // this function is to replicate changes made to one obv arr to another one(s)
-export function ObservableArrayApplies (oarr, ...arr) {
+export const ObservableArrayApplies = (oarr, ...arr) => {
   oarr.on('change', (e) => {
     var a, t
     switch (e.type) {
@@ -227,7 +227,7 @@ export function ObservableArrayApplies (oarr, ...arr) {
   })
 }
 
-export function ObservableArrayChange (arr, evt, t) {
+export const ObservableArrayChange = (arr, evt, t) => {
   switch (evt.type) {
     case 'swap':
       t = arr[evt.to]
@@ -275,6 +275,6 @@ export function ObservableArrayChange (arr, evt, t) {
   }
 }
 
-export function ObservableArrayApply (oarr, arr) {
+export const ObservableArrayApply = (oarr, arr) => {
   oarr.on('change', (evt) => ObservableArrayChange(oarr, evt))
 }

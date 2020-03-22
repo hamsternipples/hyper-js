@@ -14,7 +14,7 @@ import { update_obv } from '@hyper/dom/observable-event'
 // I'm not sure this is the best way to do this...
 // since it's the global context, should it be cached somewhere?
 
-export function global_ctx () {
+export const global_ctx = () => {
   var ctx
   var el = getElementById('global_ctx') || new_ctx({
     _id:0, ERROR: 'THIS IS THE GLOBAL CTX',
@@ -42,13 +42,13 @@ export function global_ctx () {
 }
 
 const EL_CTX = new Map()
-export function el_ctx (el) {
+export const el_ctx = (el) => {
   let ctx
   while ((ctx = EL_CTX.get(el)) == null && (el = el.parentNode) != null) {}
   return ctx
 }
 
-export function el_cleanup (el) {
+export const el_cleanup = (el) => {
   let ctx = EL_CTX.get(el)
   if (ctx) {
     ctx.cleanup()
@@ -56,7 +56,7 @@ export function el_cleanup (el) {
   }
 }
 
-export function cleanup () {
+export const cleanup = () => {
   for (let [el, ctx] of EL_CTX.entries()) {
     // there are potentially cases where you may hold on to a node for a little bit before reinserting it into the dom.
     // so, maybe it should be added to a list for gc after some timeout. if it has a parent again, remove it from the list
@@ -68,7 +68,7 @@ export function cleanup () {
 }
 
 let last_id = 0
-export function new_ctx (G = global_ctx(), fn, ...args) {
+export const new_ctx = (G = global_ctx(), fn, ...args) => {
   if (DEBUG && typeof fn !== 'function') error('new_ctx is now called with a function which returns an element')
 
   let cleanupFuncs = []

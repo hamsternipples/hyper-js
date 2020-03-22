@@ -182,7 +182,7 @@ export let custom_attrs = {
   }
 }
 
-export function set_attr (e, key_, v, cleanupFuncs = []) {
+export const set_attr = (e, key_, v, cleanupFuncs = []) => {
   // convert short attributes to long versions. s -> style, c -> className
   var s, o, i, k = short_attrs[key_] || key_
   if (is_fn(v)) {
@@ -313,7 +313,7 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
   }
 }
 
-export function arrayFragment (parent, arr, cleanupFuncs) {
+export const arrayFragment = (parent, arr, cleanupFuncs) => {
   var v, frag = doc.createDocumentFragment()
   var activeElement = (el) => el === (parent.activeElement || doc.activeElement)
   // function deepActiveElement() {
@@ -462,8 +462,7 @@ define_prop(special_elements, 'define', define_value((name, fn, args) => {
       : (fn.length || 0)
 }))
 
-export var h = new_dom_context(1)
-export function new_dom_context (no_cleanup) {
+export const new_dom_context = (no_cleanup) => {
   // TODO: turn this into ctx = new Context ((el, args) => { ... })
   //  -- and, turn the context fn into a class??
   var ctx = hyper_hermes((el, args, i) => {
@@ -477,8 +476,7 @@ export function new_dom_context (no_cleanup) {
   return ctx
 }
 
-export var s = new_svg_context(1)
-export function new_svg_context (no_cleanup) {
+export const new_svg_context = (no_cleanup) => {
   var ctx = hyper_hermes((el) => doc.createElementNS('http://www.w3.org/2000/svg', el))
 
   if (!no_cleanup) s.z(() => ctx.cleanup())
@@ -486,7 +484,10 @@ export function new_svg_context (no_cleanup) {
   return ctx
 }
 
-export function make_child_node (parent, v, cleanupFuncs, _placeholder) {
+export var h = new_dom_context(1)
+export var s = new_svg_context(1)
+
+export const make_child_node = (parent, v, cleanupFuncs, _placeholder) => {
   return isNode(v) ? v
     : is_array(v) ? arrayFragment(parent, v, cleanupFuncs)
     : is_fn(v) ? (
@@ -507,7 +508,7 @@ export function make_child_node (parent, v, cleanupFuncs, _placeholder) {
     : txt(v)
 }
 
-export function make_obv_child_node (parent, v, cleanupFuncs = []) {
+export const make_obv_child_node = (parent, v, cleanupFuncs = []) => {
   var r, o, nn, clean = [], placeholder
   if (is_fn(v)) {
     if (is_obv(v)) {
@@ -560,7 +561,7 @@ export function make_obv_child_node (parent, v, cleanupFuncs = []) {
   return r
 }
 
-export function set_style (e, style, cleanupFuncs = []) {
+export const set_style = (e, style, cleanupFuncs = []) => {
   if (is_obj(style)) {
     every(style, (val, k, setter) => {
       // this is to make positioning elements a whole lot easier.

@@ -39,14 +39,14 @@ let pathCache = new Cache(MAX_CACHE_SIZE)
 let setCache = new Cache(MAX_CACHE_SIZE)
 let getCache = new Cache(MAX_CACHE_SIZE)
 
-export function getter_no_fn (path, safe) {
+export const getter_no_fn = (path, safe) => {
   let parts = normalizePath(path)
   return function (data) {
     return getterFallback(parts, safe, data)
   }
 }
 
-export function getter_fn (path, safe) {
+export const getter_fn = (path, safe) => {
   let key = path + '_' + safe
   return getCache.get(key) || getCache.set(
       key,
@@ -54,7 +54,7 @@ export function getter_fn (path, safe) {
   )
 }
 
-export function getter (path, safe) {
+export const getter = (path, safe) => {
   let chunks = path.split('[]').map((chunk, idx) => {
     return getter_fn(idx === 0 ? chunk : chunk.slice(1), safe)
   })
@@ -70,7 +70,7 @@ export function getter (path, safe) {
   }
 }
 
-export function getterCSP (path, safe) {
+export const getterCSP = (path, safe) => {
   let chunks = path.split('[]').map((chunk, idx) => {
     return getter_no_fn(idx === 0 ? chunk : chunk.slice(1), safe)
   })
@@ -102,16 +102,16 @@ function setter (path) {
   )
 }
 
-export function get (obj, path, default_value) {
+export const get = (obj, path, default_value) => {
   let value = getter(path, true)(obj)
   return value === undefined ? default_value : value
 }
 
-export function set (obj, path, value) {
+export const set = (obj, path, value) => {
   return setter(path, true)(obj, value)
 }
 
-export function join (segments) {
+export const join = (segments) => {
   return segments.reduce((path, part) => (
     path +
     (isQuoted(part) || DIGIT_REGEX.test(part)
@@ -121,7 +121,7 @@ export function join (segments) {
   ), '')
 }
 
-export function forEach (path, cb, thisArg) {
+export const forEach = (path, cb, thisArg) => {
   each(split(path), cb, thisArg)
 }
 
@@ -145,7 +145,7 @@ function getterFallback (parts, safe, data) {
   return data
 }
 
-export function normalizePath (path) {
+export const normalizePath = (path) => {
   return pathCache.get(path)
     || pathCache
       .set(path, split(path)
@@ -153,11 +153,11 @@ export function normalizePath (path) {
   )
 }
 
-export function split (path) {
+export const split = (path) => {
   return path.match(SPLIT_REGEX) || []
 }
 
-export function expr (expression, safe, param) {
+export const expr = (expression, safe, param) => {
   expression = expression || ''
 
   if (typeof safe === 'string') {

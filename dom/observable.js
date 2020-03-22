@@ -17,20 +17,20 @@ export { is_obv, is_obv_type }
 // * changed `value` to only propagate when the value has actually changed. to force all liseners to receive the current value, `call observable.set()` or `observable.set(observable())`
 
 
-export function ensure_obv (obv) {
+export const ensure_obv = (obv) => {
   if (typeof obv !== 'function' || typeof obv._obv !== 'string')
     error('expected an observable')
 }
 
 
 // one-way binding: bind lhs to rhs -- starting with the rhs value
-export function bind1 (l, r) {
+export const bind1 = (l, r) => {
   l(r())
   return r(l)
 }
 
 // two-way binding: bind lhs to rhs and rhs to lhs -- starting with the rhs value
-export function bind2 (l, r) {
+export const bind2 = (l, r) => {
   l(r())
   let remove_l = l(r), remove_r = r(l)
   return () => { remove_l(); remove_r() }
@@ -38,7 +38,7 @@ export function bind2 (l, r) {
 
 // An observable that stores a value.
 if (DEBUG) var VALUE_LISTENERS = 0
-export function value (initial, listeners = []) {
+export const value = (initial, listeners = []) => {
   // let listeners = []
   // if the value is already an observable, then just return it
   if (typeof initial === 'function' && initial._obv === 'value') return initial
@@ -87,7 +87,7 @@ export const div = (obv, n = 2) => obv(obv.v / n)
 
 // an observable object
 // @Incomplete: find a solution here because this isn't necessarily possible to be used with `pure_getters`
-export function obv_obj (initialValue, _keys) {
+export const obv_obj = (initialValue, _keys) => {
   // if the value is already an observable, then just return it
   // this is actually incorrect, because maybe we want a new object that observes different keys
   // this kind of needs a little more thought, I think :)
@@ -145,7 +145,7 @@ observe a property of an object, works with scuttlebutt.
 could change this to work with backbone Model - but it would become ugly.
 */
 
-export function property (model, key) {
+export const property = (model, key) => {
   obv._obv = 'property'
   return obv
 
@@ -169,7 +169,7 @@ export function property (model, key) {
 // listens to `obv`, calling `down` with the value first before passing it on to the listener
 // when set, it'll call `up` (if it's set), otherwise `down` with the set value before setting
 // that transformed value in `obv`
-export function transform (obv, down, up) {
+export const transform = (obv, down, up) => {
   if (DEBUG) ensure_obv(obv)
 
   observable._obv = obv._obv
@@ -188,7 +188,7 @@ export function transform (obv, down, up) {
 
 // transform an array of obvs
 if (DEBUG) var COMPUTE_LISTENERS = 0
-export function compute (obvs, compute_fn) {
+export const compute = (obvs, compute_fn) => {
   let is_init = 1, len = obvs.length
   let obv_vals = new Array(len)
   let listeners = [], removables = [], fn
@@ -238,7 +238,7 @@ export function compute (obvs, compute_fn) {
   }
 }
 
-export function calc (obvs, compute_fn) {
+export const calc = (obvs, compute_fn) => {
   let len = obvs.length, fn
   let obv_vals = new Array(len)
 
@@ -250,7 +250,7 @@ export function calc (obvs, compute_fn) {
   return compute_fn.apply(null, obv_vals)
 }
 
-export function boolean (obv, truthy, falsey) {
+export const boolean = (obv, truthy, falsey) => {
   return (
     transform(obv,
       (val) => val ? truthy : falsey,
@@ -259,12 +259,12 @@ export function boolean (obv, truthy, falsey) {
   )
 }
 
-export function obv_property (obj, key, o) {
+export const obv_property = (obj, key, o) => {
   define_prop(obj, key, define_getter((v) => { o(v) }, () => o()))
   return () => { define_prop(obj, key, define_value(o(), true)) }
 }
 
-export function PRINT_COUNTS () {
+export const PRINT_COUNTS = () => {
   let counts = { value: VALUE_LISTENERS, compute: COMPUTE_LISTENERS }
   console.log(counts)
   return counts

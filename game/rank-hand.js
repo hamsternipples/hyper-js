@@ -34,7 +34,8 @@ function rankKickers (noOfCards, ranks) {
 }
 
 const remove = (str, r1, r2) => r2 ? str.replace(r1, '').replace(r2, '') : str.replace(r1, '')
-export function rankHandInt (_cards) {
+
+export const rankHandInt = (_cards) => {
   var rank = 0
   var message = ''
 
@@ -440,7 +441,7 @@ export function rankHandInt (_cards) {
   return { v: rank, t: message }
 }
 
-export function rankHands (hands) {
+export const rankHands = (hands) => {
   var i = 0, rank
 
   for (; i < hands.length; i++) {

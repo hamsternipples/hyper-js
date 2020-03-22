@@ -22,7 +22,7 @@ const QUERYPAIR_REGEX = /^([\w\-]+)(?:=([^&]*))?$/
 const SEGMENT_PARAM_REGEX = /^:([\w\-]+)\??$/
 const HANDLERS = [ 'beforeenter', 'enter', 'leave', 'update' ]
 
-function get_internal_link_element (event) {
+const get_internal_link_element = (event) => {
   let el = event.composed ? event.composedPath()[0] : event.target
   while (el && el.nodeName !== 'A') el = el.parentNode
 
@@ -154,7 +154,7 @@ class Route {
   }
 }
 
-function segmentsMatch (a, b) {
+const segmentsMatch = (a, b) => {
   if (a.length > b.length) return
 
   let i = a.length
@@ -371,7 +371,7 @@ export default class RoadTrip {
 //  - added link detection in custom elements
 //  - allow the link watching to be contained to an element (workaround for document level passive listeners)
 
-export function watchLinks (roadtrip, container_el) {
+export const watch_links = (roadtrip, container_el) => {
   let cancel_event_and_goto = (event, path, options) => {
     // preventDefault on document level ecents is no longer possible starting with chrome 56
     // (all document level event listeners are considered passive by default)

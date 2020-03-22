@@ -19,4 +19,4 @@ export const Object = win.Object
 export const is_array = Array.isArray
 
 
-export function noop () {}
+export const noop = () => {}

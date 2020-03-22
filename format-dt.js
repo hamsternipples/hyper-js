@@ -22,7 +22,7 @@ export const time_units = (() => {
   }).reverse()
 })()
 
-export function dt2unit (dt) {
+export const dt2unit = (dt) => {
   dt = Math.abs(dt)
   var u, v, i = 0
   for (; i < time_units.length; i++) {
@@ -31,7 +31,7 @@ export function dt2unit (dt) {
   }
 }
 
-export function dt2units (dt) {
+export const dt2units = (dt) => {
   dt = Math.abs(dt)
   var results = []
   each(time_units, (unit) => {
@@ -46,7 +46,7 @@ export function dt2units (dt) {
   return results
 }
 
-export function format_dt (units) {
+export const format_dt = (units) => {
   if (typeof units === 'number') units = dt2units(units)
   var results = []
   each(time_units, ([k]) => {
@@ -118,7 +118,7 @@ var locales = {
   }
 }
 
-export function dt2human (dt, locale) {
+export const dt2human = (dt, locale) => {
   return dt2units(dt).map(([k, v]) =>
     substitute_relative(
       k == 'seconds' ? (v <= 1 ? 's' : 'ss') :
@@ -132,7 +132,7 @@ export function dt2human (dt, locale) {
   )
 }
 
-export function dt2relative (dt, without_suffix, locale) {
+export const dt2relative = (dt, without_suffix, locale) => {
   var u = dt2unit(dt)
   var k = u[0], v = u[1]
 

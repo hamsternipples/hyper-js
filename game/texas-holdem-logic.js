@@ -66,7 +66,7 @@ class Game {
   }
 }
 
-export function holdem_table (config = {}) {
+export const holdem_table = (config = {}) => {
   const state = value('waiting')
 
   // config

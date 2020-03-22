@@ -9,12 +9,12 @@ import { Object, noop } from '@hyper/global'
 export { is_array, noop }
 
 
-export function error (message, type = Error) {
+export const error = (message, type = Error) => {
   if (message instanceof Error) throw message
   else throw new type(message)
 }
 
-export function __debug (msg) {
+export const __debug = (msg) => {
   if (msg) console.log('entering the debugger. reason:\n    ' + msg)
   if (typeof DEBUG !== 'undefined') debugger
   else console.warn('continuing... (debug not enabled)')
@@ -46,23 +46,28 @@ export const is_obv_type = (obv, type) => typeof obv === 'function' && (obv._obv
 export const slice = [].slice
 
 // micro-optimization: http://jsperf.com/for-vs-foreach/292
-export function each (arr, fn, _this = arr, i) {
+export const each = (arr, fn, _this = arr, i) => {
   for (i = 0; i < arr.length; ++i) fn.call(_this, arr[i], i)
 }
 
-export function each_reverse (arr, fn, _this = arr, i) {
+export const each_reverse = (arr, fn, _this = arr, i) => {
   for (i = arr.length - 1; i >= 0; i--) fn.call(_this, arr[i], i)
 }
 
-export function call_each (arr, _this = arr, i) {
+export const call_each = (arr, _this = arr, i) => {
   for (i = 0; i < arr.length; ++i) arr[i].call(_this)
 }
 
-export function every (obj, fn, _this = obj, k) {
+export const every = (obj, fn, _this = obj, k) => {
   for (k in obj) fn.call(_this, obj[k], k)
 }
 
-export function concat (arr1, arr2) {
+export const reverse_props = (obj, k, ret = {}) => {
+  every(obj, (val, k) => ret[val] = k)
+  return ret
+}
+
+export const concat = (arr1, arr2) => {
   var l1 = arr1.length
   var l2 = arr2.length
   var res = empty_array(l1 + l2)
@@ -72,7 +77,7 @@ export function concat (arr1, arr2) {
   return res
 }
 
-export function empty_array (n = 0, init_value = 0) {
+export const empty_array = (n = 0, init_value = 0) => {
   var array = Array(n)
   while (n-- > 0) array[n] = typeof init_value === 'function' ? init_value(n) : init_value
   return array
@@ -81,7 +86,7 @@ export function empty_array (n = 0, init_value = 0) {
 export const array_idx = (len, idx) => idx < 0 ? len + idx : idx
 
 // same as lodash.compact, but does the compaction inline on the same array by resizing it
-export function compact (array) {
+export const compact = (array) => {
   var i = -1
   var len = array.length
   var idx = -1
@@ -97,7 +102,7 @@ export function compact (array) {
 }
 
 // removes (using splice) by strict-comparison all of `value` (default: null) from an array
-export function remove_every (array, value = null) {
+export const remove_every = (array, value = null) => {
   var i = -1
   var len = array.length
   var to_remove = 0
@@ -113,47 +118,47 @@ export function remove_every (array, value = null) {
 }
 
 // lightweight version of flatten which only flattens 1 level deep.
-export function flatten (array) {
+export const flatten = (array) => {
   let res = []
   for (let v of array) is_array(v) ? res.push(...v) : res.push(v)
   return res
 }
 
-export function ensure_array (value) {
+export const ensure_array = (value) => {
   return is_array(value) ? value : [value]
 }
 
 // unique array values using Set.
-export function uniq (array) {
+export const uniq = (array) => {
   return Array.from(new Set(array).values())
 }
 
 // swaps two elements in an array/object
-export function swap (o, to, from) {
+export const swap = (o, to, from) => {
   var t = o[to]
   o[to] = o[from]
   o[from] = t
 }
 
-export function obj_aliases (proto, aliases, k) {
+export const obj_aliases = (proto, aliases, k) => {
   for (k in aliases) proto[k] = proto[aliases[k]]
 }
 
 // `cb(obj, array[i])` gets called `array.length` times
-export function obj_apply (obj, array, cb) {
+export const obj_apply = (obj, array, cb) => {
   for (let item of array) cb(obj, item)
   return obj
 }
 
 // `cb(obj, array[i], array2[j])` gets called `array.length * array2.length` times
-export function obj_apply2 (obj, array, array2, cb) {
+export const obj_apply2 = (obj, array, array2, cb) => {
   for (let item of array)
     for (let item2 of array2)
       cb(obj, item, item2)
   return obj
 }
 
-export function parseJSON (string) {
+export const parseJSON = (string) => {
   try {
     return JSON.parse(string)
   } catch (e) {
@@ -161,14 +166,14 @@ export function parseJSON (string) {
   }
 }
 
-export function objJSON (s) {
+export const objJSON = (s) => {
   try {
     return typeof s === 'string' ? JSON.parse(s) : s
   } catch (e) {}
   return {}
 }
 
-export function pick (object, keys) {
+export const pick = (object, keys) => {
   var x, data = {}
 
   if (typeof keys === 'function') {
@@ -187,7 +192,7 @@ export function pick (object, keys) {
 }
 
 // @Cleanup: this looks to be a duplicate of the above `is_empty`
-export function isEmpty (value) {
+export const isEmpty = (value) => {
   return !value ||
     (typeof value.length === 'number' && !value.length) ||
     (typeof value.size === 'number' && !value.size) ||
@@ -204,7 +209,7 @@ export const define_value = (value, writable = false, enumerable = true, configu
 export const define_prop = (obj, prop, def) => Object.defineProperty(obj, prop, def)
 export const define_props = (obj, prop_defs) => Object.defineProperties(obj, prop_defs)
 
-export function slasher (_path, strip_leading) {
+export const slasher = (_path, strip_leading) => {
   // strip trailing slash
   var path = _path.replace(/\/$/, '')
   // (optionally) strip leading slash
@@ -213,14 +218,14 @@ export function slasher (_path, strip_leading) {
 
 // get a value from options then return the value (or the default passed)
 // puts object into "slow mode" though
-export function extract_opts_val (opts, key, _default) {
+export const extract_opts_val = (opts, key, _default) => {
   var val
   if (val = opts[key]) delete opts[key]
   return val === void 9 ? _default : val
 }
 
 // knicked from: https://github.com/elidoran/node-optimal-object/blob/master/lib/index.coffee
-export function optimal_obj (obj) {
+export const optimal_obj = (obj) => {
   Object.create(obj)
   var enforcer = () => obj.blah
   // call twice to ensure v8 optimises the object
@@ -229,12 +234,12 @@ export function optimal_obj (obj) {
 }
 
 // merges all of `objs` into a new object (doesn't modify any of the `objs`)
-export function merge (...objs) {
+export const merge = (...objs) => {
   return Object.assign({}, ...objs)
 }
 
 // merges all of the properties from `obj[1 .. *]` into `obj[0]` and returns `obj[0]`
-export function extend (...obj) {
+export const extend = (...obj) => {
   return DEBUG && !obj.length
     ? error(`don't call extend with 0 arguments`)
     : Object.assign(...obj)
@@ -243,7 +248,7 @@ export function extend (...obj) {
 export { extend as assign }
 
 // knicked from: https://stackoverflow.com/questions/27936772/how-to-deep-merge-instead-of-shallow-merge
-export function mergeDeep(target, ...sources) {
+export const mergeDeep =(target, ...sources) => {
   if (!sources.length) return target
   var key, src_obj, source = sources.shift()
 
@@ -262,7 +267,7 @@ export function mergeDeep(target, ...sources) {
 }
 
 // same as above, but also concats arrays
-export function mergeDeepArray(target, ...sources) {
+export const mergeDeepArray =(target, ...sources) => {
   if (!sources.length || !obj_like(target)) return target
   var key, src_val, obj_val, source
 
@@ -296,7 +301,7 @@ export const kind_of = (val) => val === null ? 'null'
   : {}.toString.call(val).slice(8, -1).toLowerCase()
 
 let next_ticks = []
-export function next_tick (cb, ...args) {
+export const next_tick = (cb, ...args) => {
   if (!next_ticks.i) {
     next_ticks.i = setTimeout(() => {
       for (let n, i = 0; i < next_ticks.length; i++)
@@ -309,12 +314,25 @@ export function next_tick (cb, ...args) {
   return next_ticks.p
 }
 
-export function after (seconds, cb, ...args) {
+export const after = (seconds, cb, ...args) => {
   if (typeof seconds === 'function')
-    return next_tick.apply(this, arguments)
+    return next_tick(cb, ...args)
   let id = setTimeout(() => {
     if (typeof cb === 'function') cb(...args)
   }, seconds * 1000)
   if (!cb) return new  Promise((resolve) => cb = resolve)
   return () => clearTimeout(id)
 }
+
+// not working. incomplete. I don't know exactly what I want yet. nocommit
+export const time_curve = (sec, curve, cb) => {
+  var f = get_beizer(curve)
+  var t0 = 0
+  raf(() => {
+    var ts = performance.now()
+    if (!first_t) first_t = now
+    var delta = (ts - t0)
+  })
+}
+
+// @Incomplete: also add the timeline in meditatior

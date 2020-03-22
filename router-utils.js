@@ -1,11 +1,11 @@
 import { pick, compact, is_array, isEmpty, stringify, parseJSON } from '@hyper/utils'
 
-export function pathVars (path) {
+export const pathVars = (path) => {
   let m = path.match(/\/:\w+/g)
   return m ? m.map((name) => name.substr(2)) : []
 }
 
-export function pathToRegExp (path) {
+export const pathToRegExp = (path) => {
   return new RegExp(
     pathToRegExpString(path)
       .replace(/^\^(\\\/)?/, '^\\/?')
@@ -14,7 +14,7 @@ export function pathToRegExp (path) {
   )
 }
 
-export function pathToStrictRegExp (path) {
+export const pathToStrictRegExp = (path) => {
   return new RegExp(pathToRegExpString(path))
 }
 
@@ -25,7 +25,7 @@ function pathToRegExpString (path) {
     .replace(/\//g, '\\/')
 }
 
-export function parseHash (hash, keys) {
+export const parseHash = (hash, keys) => {
   try {
     var parsed = compact(parseJSON(decodeURIComponent(hash.substr(2))))
 
@@ -37,11 +37,11 @@ export function parseHash (hash, keys) {
   }
 }
 
-export function joinPaths (...parts) {
+export const joinPaths = (...parts) => {
   return parts.join('/').replace(/\/+/g, '/')
 }
 
-export function parseUri (uri) {
+export const parseUri = (uri) => {
   var parts = uri.match(/^(?:([\w+.-]+):\/\/([^/]+))?([^?#]*)?(\?[^#]*)?(#.*)?/)
 
   return {
@@ -53,7 +53,7 @@ export function parseUri (uri) {
   }
 }
 
-export function parseQS (qs, keys) {
+export const parseQS = (qs, keys) => {
   var index, parsed = {}, pairs, pair, k, v, c, i = 0
 
   if (~(index = qs.indexOf('?'))) {
@@ -81,7 +81,7 @@ export function parseQS (qs, keys) {
     : parsed
 }
 
-export function stringifyHash (data) {
+export const stringifyHash = (data) => {
   data = compact(data)
 
   return data.length
@@ -89,7 +89,7 @@ export function stringifyHash (data) {
     : ''
 }
 
-export function stringifyQS (data) {
+export const stringifyQS = (data) => {
   var qs = ''
 
   for (var x in data) {

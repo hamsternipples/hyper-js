@@ -1,11 +1,11 @@
-export function print_error (message, id, loc, code) {
+export const print_error = (message, id, loc, code) => {
   console.error(message || 'Unknown Error')
   if (code) console.error(error_context(id, loc, code))
   else if (id) console.error('  in: ' + id + (loc ? ':' + loc.start.line : ''))
 }
 
 
-export function error_context (id, loc, code, opts = {}) {
+export const error_context = (id, loc, code, opts = {}) => {
   let { start, end } = loc.start ? loc : { start: loc, end: loc }
   let { line, column } = start
   let out = ''

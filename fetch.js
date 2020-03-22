@@ -7,13 +7,13 @@ const defaultHeaders = {
   'Content-Type': 'application/json',
 }
 
-function buildHeaders () {
+const buildHeaders => () {
   const authToken = localStorage.getItem('phoenixAuthToken')
 
   return assign(defaultHeaders, { Authorization: authToken })
 }
 
-export function checkStatus (response) {
+export const checkStatus = (response) => {
   if (response.status >= 200 && response.status < 300) {
     return response
   } else {
@@ -23,11 +23,11 @@ export function checkStatus (response) {
   }
 }
 
-export function parseJSON (response) {
+export const parseJSON = (response) => {
   return response.json()
 }
 
-export function httpGet (url) {
+export const httpGet = (url) => {
   return fetch(url, {
     headers: buildHeaders(),
   })
@@ -35,7 +35,7 @@ export function httpGet (url) {
     .then(parseJSON)
 }
 
-export function httpPost (url, data) {
+export const httpPost = (url, data) => {
   const body = JSON.stringify(data)
 
   return fetch(url, {
@@ -47,7 +47,7 @@ export function httpPost (url, data) {
     .then(parseJSON)
 }
 
-export function httpDelete (url) {
+export const httpDelete = (url) => {
   return fetch(url, {
     method: 'delete',
     headers: buildHeaders(),

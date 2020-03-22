@@ -46,7 +46,7 @@ export const sum_prop_values = (obj, props) => (
 
 export const bounding_rect = (el) => el.getBoundingClientRect()
 
-export function scroll_to (id_or_el) {
+export const scroll_to = (id_or_el) => {
   let el = getElementById(id_or_el)
 
   return !el ? null : isNode(el)
@@ -54,20 +54,20 @@ export function scroll_to (id_or_el) {
     : win.scrollTo(0, 0)
 }
 
-export function get_style_prop (element, prop) {
+export const get_style_prop = (element, prop) => {
   let st = element.currentStyle
   return st ? st[prop]
     : getComputedStyle ? getComputedStyle(element, null).getPropertyValue(prop)
     : element.style[prop]
 }
 
-export function element_offset (child) {
+export const element_offset = (child) => {
   let i = 0
   while ((child = child.previousSibling) != null) i++
   return i
 }
 
-export function lookup_parent_element (el, name) {
+export const lookup_parent_element = (el, name) => {
   while (el && el.nodeName.toLowerCase() !== name) {
     el = el.parentNode
   }
@@ -75,7 +75,7 @@ export function lookup_parent_element (el, name) {
   return el
 }
 
-export function lookup_parent_with_attr (el, attr, filter) {
+export const lookup_parent_with_attr = (el, attr, filter) => {
   while (el && el[attr] === undefined && (!filter || !filter(el))) {
     el = el.parentNode
   }
@@ -96,7 +96,7 @@ let event_opts = (opts) =>
 
 // event stuff
 // @Cleanup: replace all instances of 'addEventListener' with this function (to save a few bytes)
-export function on (emitter, event, listener, opts = false) {
+export const on = (emitter, event, listener, opts = false) => {
   if (DEBUG && emitter.tagName === 'A' && (typeof opts === 'boolean' || opts.passive)) {
     error('you are trying to listen to an event on an element which will perform page navigation. pass `{passive: false}` if you want to change the default behaviour of the anchor element')
   }
@@ -104,7 +104,7 @@ export function on (emitter, event, listener, opts = false) {
 }
 
 // @Cleanup: replace all instances of 'removeEventListener' with this function (to save a few bytes)
-export function off (emitter, event, listener, opts = false) {
+export const off = (emitter, event, listener, opts = false) => {
   (emitter.off || emitter.removeEventListener).call(emitter, event, listener, event_opts(opts))
 }
 
@@ -113,16 +113,16 @@ export function off (emitter, event, listener, opts = false) {
 //  (but I'm not worrying about supporting old browsers). this is designed for modern browsers
 // right now, val is simply being passed through... obviously it should set the correct fields though...
 // which I'm going to just ignore for the time being...
-export function dispatch_event (element, event, val) {
+export const dispatch_event = (element, event, val) => {
   (element.dispatchEvent(new Event(event)), val)
 }
 
-export function prevent_default (event) {
+export const prevent_default = (event) => {
   event && (event.preventDefault(), event.stopImmediatePropagation())
   return false
 }
 
-export function dom_loaded (callback) {
+export const dom_loaded = (callback) => {
   if (ANCIENT) {
     /* Mozilla, Chrome, Opera */
     if (doc.addEventListener) {

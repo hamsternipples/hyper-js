@@ -5,7 +5,7 @@ export const CARDINAL = 'zero one two three four five six seven eight nine ten e
 
 export const ORDINAL = 'zeroth first second third fourth fifth'.split(' ')
 
-export function ordinal_suffix (i) {
+export const ordinal_suffix = (i) => {
   var j = i % 10, k = i % 100
   return (j == 1 && k != 11)
     ? i + 'st' : (j == 2 && k != 12)
@@ -13,10 +13,10 @@ export function ordinal_suffix (i) {
     ? i + 'rd' : i + 'th'
 }
 
-export function cardinal (i) {
+export const cardinal = (i) => {
   return i < 20 ? CARDINAL[i] : error('not yet implemented')
 }
 
-export function ordinal (i) {
+export const ordinal = (i) => {
   return i < 6 ? ORDINAL[i] : cardinal(i) + ordinal_suffix(i)
 }

@@ -7,7 +7,7 @@ import { h, s } from '@hyper/lib/dom/hyper-hermes'
 // knicked from http://github.com/stewartlord/identicon.js
 // removed png rendering and implemented svg rendering as default
 
-export function identicon (hash, opts = {}) {
+export const identicon = (hash, opts = {}) => {
   opts = mergeDeep({
     background: [240, 240, 240, 255],
     margin: 0.08,

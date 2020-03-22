@@ -250,7 +250,7 @@ export class FixtureInteraction extends PromiseQueue {
   }
 }
 
-export function panel_fixture (testing_panel, C = {}, D = {}, test_runner) {
+export const panel_fixture = (testing_panel, C = {}, D = {}, test_runner) => {
   const name = testing_panel.name
   if (!name) error("cannot determine the name of the panel. please use a named function")
 

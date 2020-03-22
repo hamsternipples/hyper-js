@@ -6,7 +6,7 @@ import { on, off, dispatch_event, prevent_default } from '@hyper/dom-base'
 
 // listen to any event, reading `attr` and calling `listener` with the value.
 // `attr` can also be a function which can be used to transform the value passed to listener.
-export function listen (element, event, attr, listener, do_immediately, opts) {
+export const listen = (element, event, attr, listener, do_immediately, opts) => {
   if (DEBUG && typeof listener !== 'function') error(`listener isn't a function`)
   let on_event = (e) => { listener(typeof attr === 'function' ? attr(e) : attr ? element[attr] : e) }
   on(element, event, on_event, opts)
@@ -16,7 +16,7 @@ export function listen (element, event, attr, listener, do_immediately, opts) {
 
 // observe any event, reading any attribute.
 // returns an observable.
-export function obv_event (element, attr = 'value', event = 'keyup', event_filter, listener) {
+export const obv_event = (element, attr = 'value', event = 'keyup', event_filter, listener) => {
   event_filter = typeof event_filter === 'function' ? event_filter
     : ((e) => e.which === 13 && !e.shiftKey)
 
@@ -40,7 +40,7 @@ export function obv_event (element, attr = 'value', event = 'keyup', event_filte
 
 // returns an event listener (for example, to be used in combination with addEventListener)
 // which will modify the value of `obv` whenever the returned function is called.
-export function update_obv (obv, update_fn) {
+export const update_obv = (obv, update_fn) => {
   if (DEBUG) ensure_obv(obv)
   if (DEBUG) if (typeof update_fn !== 'function') error('update_fn should be a function which updates the obv value, eg. (v) => !v')
   return (evt) => obv(update_fn(evt, obv()))
@@ -49,7 +49,7 @@ export function update_obv (obv, update_fn) {
 
 //observe html element - aliased as `input`
 export { attribute as input }
-export function attribute (element, attr = 'value', event = 'input') {
+export const attribute = (element, attr = 'value', event = 'input') => {
   observable._obv = 'attribute'
   return observable
 
@@ -65,7 +65,7 @@ export function attribute (element, attr = 'value', event = 'input') {
 }
 
 // observe a select element
-export function select (element, attr = 'value', event = 'change') {
+export const select = (element, attr = 'value', event = 'change') => {
   const get_attr = (idx = element.selectedIndex) => ~idx ? element.options[idx][attr] : null
   const set_attr = (val) => {
     var options = element.options, i = 0
@@ -90,7 +90,7 @@ export function select (element, attr = 'value', event = 'change') {
 }
 
 //toggle based on an event, like mouseover, mouseout
-export function toggle (el, up_event, down_event) {
+export const toggle = (el, up_event, down_event) => {
   var _val = false
   var on_up = (listener) => () => _val || listener.call(el, _val = true)
   var on_down = (listener) => () => _val && listener.call(el, _val = false)
@@ -114,7 +114,7 @@ export function toggle (el, up_event, down_event) {
   }
 }
 
-export function add_event (cleanupFuncs, e, event, listener, opts) {
+export const add_event = (cleanupFuncs, e, event, listener, opts) => {
   on(e, event, listener, opts)
   cleanupFuncs.z(() => { off(e, event, listener, opts) })
 }
@@ -133,7 +133,7 @@ export function add_event (cleanupFuncs, e, event, listener, opts) {
 // also allowing for navigation away from the page.
 //
 //      -kenny (2020-02-14)
-export function boink (cleanupFuncs, el, obv, opts) {
+export const boink = (cleanupFuncs, el, obv, opts) => {
   // passing attr=0 here to tell it to not grab the value of any attribute on the el.
   cleanupFuncs.push(
     listen(el, 'click', 0, (ev) => { is_obv(obv) ? obv(!obv()) : obv.call(el, ev, el) }, 0, opts),
@@ -141,7 +141,7 @@ export function boink (cleanupFuncs, el, obv, opts) {
   )
 }
 
-export function press (cleanupFuncs, el, obv, pressed = true, normal = false) {
+export const press = (cleanupFuncs, el, obv, pressed = true, normal = false) => {
   // passing attr=0 here to tell it to not grab the value of any attribute on the el.
   cleanupFuncs.push(
     listen(el, 'mouseup', 0, () => { obv(normal) }),
@@ -151,7 +151,7 @@ export function press (cleanupFuncs, el, obv, pressed = true, normal = false) {
   )
 }
 
-export function observe_event (cleanupFuncs, el, observe_obj) {
+export const observe_event = (cleanupFuncs, el, observe_obj) => {
   let s, v
   for (s in observe_obj) {
     v = observe_obj[s]
