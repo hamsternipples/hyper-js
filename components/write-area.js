@@ -7,7 +7,7 @@ import './write-area.less'
 
 // @Improve: make it so that when pressing cmd/ctrl+enter, it sends the comment
 
-export default function write_area (G, cb, placeholder) {
+export default function write_area (G, cb, placeholder, cls) {
   var { h, v, t, c, z } = G
   var txt = v()
   var sending = v(0)
@@ -18,7 +18,7 @@ export default function write_area (G, cb, placeholder) {
     sending(1) // disable the textarea and button.
     cb(txt(), (err) => {
       sending(0) // enable both the textarea and the button
-      var cls = err ? 'error' : 'success'
+      cls = err ? 'error' : 'success'
 
       tip(
         h('.tip.'+cls, {boink: clear_tip}, err
@@ -33,9 +33,9 @@ export default function write_area (G, cb, placeholder) {
 
       textarea.c(cls, 1, 0.5)
     })
-
   }
-  var textarea = h('textarea', {
+
+  var textarea = h('textarea' + (cls || ''), {
     keydown: (e) => {
       return ((e.ctrlKey || e.shiftKey) && e.which === 13) ? (send_it(), prevent_default(e)) : 0
     },
@@ -56,6 +56,7 @@ export default function write_area (G, cb, placeholder) {
       disabled: sending,
       hidden: t(txt, txt => !txt),
       boink: send_it,
+      send: send_it,
     }, t(sending, v => v ? 'sending...' : 'send'))
   )
 }
