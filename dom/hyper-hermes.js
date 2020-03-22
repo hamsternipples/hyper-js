@@ -13,6 +13,7 @@ import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/uti
 import { each, call_each, every } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
 import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
+import { random_id } from '@hyper/random'
 
 import { win, doc, customElements } from '@hyper/global'
 import { isNode, txt, comment, cE } from '@hyper/dom-base'
@@ -235,8 +236,10 @@ export function set_attr (e, key_, v, cleanupFuncs = []) {
       e.defaultChecked = e.checked = !!v
     } else if (k === 'value') {
       e.defaultValue = e.value = v
-    } else if (k === 'for') {
-      e.htmlFor = v
+    } else if (k === 'htmlFor') {
+      e[k] = isNode(v) ? (v.id || (v.id = random_id()))
+        : DEBUG && !is_str(v) ? error('invalid element or id for label')
+        : v
     } else if (k === 'class') {
       if (v) {
         o = e.classList
