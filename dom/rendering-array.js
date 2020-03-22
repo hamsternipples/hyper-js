@@ -1,7 +1,8 @@
 
 import { empty_array, extend, swap, define_prop, define_getter, error } from '@hyper/utils'
 import { is_obv, value } from '@hyper/dom/observable'
-import { new_ctx } from '@hyper/dom/hyper-ctx'
+import { make_node } from '@hyper/dom/hyper-hermes'
+import { comment } from '@hyper/dom-base'
 import ObservableArray from '@hyper/dom/observable-array'
 
 // G: ctx from which to inherit sub ctxs
@@ -223,20 +224,37 @@ export default class RenderingArray extends ObservableArray {
   }
 
   fn_call (d, idx) {
-    let { fl, fn, G } = this // @Incomplete: add _d, and _idx
-    let __d, __idx
-    if (fl === 0) return fn()
-    else {
-      __d = this._d[idx] || (this._d[idx] = this.plain ? d : typeof d === 'object' ? obv_obj(d) : value(d))
-      if (fl === 1) return fn(__d)
-      else {
-        if (fl === 2) return new_ctx(this.G, fn, __d)
-        else { //if (fl === 3) {
-          // TODO: check to see if this observable needs to be cleaned up (I don't think so, anyway, but maybe I'm wrong)
-          __idx = this._idx[idx] || (this._idx[idx] = value(idx))
-          return new_ctx(G, fn, __d, __idx)
-        }
+    var self = this
+    var { fl, fn, G, _d } = self
+    var __d, el
+    if (fl === 0) {
+      el = fn()
+    } else {
+      __d = _d[idx] || (
+        _d[idx] = self.plain ? d
+          : typeof d === 'object' ? obv_obj(d)
+          : value(d)
+      )
+
+      if (fl === 1) { // fn(data)
+        el = fn(__d)
+      } else if (fl === 2) { // fn(G, data)
+        el = G.N(fn, __d)
+      } else { // fn(G, data, idx)
+        el = G.N(fn, __d, self._idx[idx] || (self._idx[idx] = value(idx)))
       }
+
+      if (el && el.then) {
+        el.then(v => {
+          self[idx] = v
+          var parent = el.parentNode
+          var node = make_node(parent, v, G.cleanupFuncs)
+          if (DEBUG && !parent) error('promise unable to insert itself into the dom because el does not have a parentNode')
+          else parent.rC(node, el), G.z(() => node.rm())
+        })
+        el = comment(DEBUG ? '5:promise-value' : 5)
+      }
+      return el
     }
   }
 

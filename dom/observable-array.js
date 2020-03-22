@@ -129,7 +129,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   }
 
   splice (idx, remove, ...add) {
-    if (idx === undefined || (remove !== undefined && (+idx >= this.length || +remove <= 0))) return []
+    if (idx === undefined || (remove !== undefined && (+idx >= this.length || +remove < 0))) return []
     this.emit('change', { type: 'splice', idx, remove, add })
     var ret = super.splice(idx, remove, ...add)
     this._up()

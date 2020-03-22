@@ -315,20 +315,19 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       var i, j, o, oo, len = arr.length
       var type = ev.type
       if (type == 'unshift') {
-        for (i = ev.values.length - 1; i >= 0; i--)
-          e.insertBefore(
-            isNode(o = make_node(e, ev.values[i], cleanupFuncs))
-              ? o
-              : txt(o), arr[0]
-          )
+        for (i = ev.values.length - 1; i >= 0; i--) {
+          o = make_node(e, ev.values[i], cleanupFuncs)
+          e.insertBefore(isNode(o) ? o : txt(o), arr[0])
+        }
       }
       else if (type == 'push') {
-        for (i = 0; i < ev.values.length; i++)
+        for (i = 0; i < ev.values.length; i++) {
+          o = make_node(e, ev.values[i], cleanupFuncs)
           e.insertBefore(
-            isNode(o = make_node(e, ev.values[i], cleanupFuncs))
-              ? o
-              : txt(o), arr[arr.length + ev.values.length - i - 1]
+            isNode(o) ? o : txt(o),
+            arr[arr.length + ev.values.length - i - 1]
           )
+        }
       }
       else if (type == 'pop') {
         e.removeChild(arr[len-1])
@@ -341,12 +340,15 @@ export function arrayFragment (e, arr, cleanupFuncs) {
         // experimental:
         if (ev.remove) for (i = 0; i < ev.remove; i++) {
           if (o = arr[j++]) {
-            if (oo = ev.add[i]) e.replaceChild(isNode(oo) ? oo : txt(oo), o)
+            oo = make_node(e, ev.add[i], cleanupFuncs)
+            if (oo) e.replaceChild(isNode(oo) ? oo : txt(oo), o)
             else e.removeChild(o)
           }
         }
-        if (ev.add) for (i = 0; i < ev.add.length; i++)
-          e.insertBefore(isNode(o = ev.add[i]) ? o : txt(o), arr[j])
+        if (ev.add) for (i = 0; i < ev.add.length; i++) {
+          o = make_node(e, ev.add[i], cleanupFuncs)
+          e.insertBefore(isNode(o) ? o : txt(o), arr[j])
+        }
         // working (just in case replaceChild has some weird cases):
         // if (ev.remove) for (i = 0; i < ev.remove; i++)
         //   if (o = arr[j++]) e.removeChild(o)
@@ -369,7 +371,7 @@ export function arrayFragment (e, arr, cleanupFuncs) {
         }
       }
       else if (type == 'replace') {
-        o = ev.val
+        o = make_node(e, ev.val, cleanupFuncs)
         oo = ev.old
         if (activeElement(o) || o.focused === 1) i = 1
         if (activeElement(oo)) oo.focused = 1
@@ -378,7 +380,7 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       }
       else if (type == 'insert') {
         if ((i = ev.idx) < 0) i += len // -idx
-        e.insertBefore(ev.val, arr[i])
+        e.insertBefore(ev.val, make_node(e, arr[i], cleanupFuncs))
       }
       else if (type == 'reverse') {
         for (i = 0, j = +(arr.length / 2); i < j; i++)
@@ -410,7 +412,8 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       }
       else if (type == 'remove') {
         if ((i = ev.idx) < 0) i += len // -idx
-        e.removeChild(arr[i])
+        // e.removeChild(arr[i])
+        arr[i].rm()
       }
       else if (type == 'set') {
         if ((i = ev.idx) < 0) i += len // -idx
@@ -418,13 +421,15 @@ export function arrayFragment (e, arr, cleanupFuncs) {
       }
       else if (type == 'empty') {
         for (i = 0; i < arr.length; i++)
-          e.removeChild(arr[i])
+          // e.removeChild(arr[i])
+          arr[i].rm()
       }
       else if (DEBUG) {
         console.log('unknown event', ev)
       }
     }
 
+    arr.parent = e
     arr.on('change', onchange)
     cleanupFuncs.z(() => { arr.off('change', onchange) })
   }
@@ -466,6 +471,7 @@ export function new_svg_context (no_cleanup) {
   return ctx
 }
 
+// @Legibility: make variable name e, clearer
 export function make_node (e, v, cleanupFuncs, placeholder) {
   return isNode(v) ? v
     : is_array(v) ? arrayFragment(e, v, cleanupFuncs)
@@ -476,14 +482,18 @@ export function make_node (e, v, cleanupFuncs, placeholder) {
       })()
     )
     : v == null ? comment(DEBUG ? '0:null' : 0)
-    : is_fn(v.then) ? (v.then((v) => {
-      let node = make_node(e, v, cleanupFuncs)
-      if (DEBUG && placeholder.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
-      else e.rC(node, placeholder), cleanupFuncs.z(() => node.rm())
-    }), placeholder = comment(DEBUG ? '2:promise-value' : 2))
+    : is_fn(v.then) ? (
+      v.then((v, node) => {
+        node = make_node(e, v, cleanupFuncs)
+        if (DEBUG && placeholder.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
+        else e.rC(node, placeholder), cleanupFuncs.z(() => node.rm())
+      }),
+      placeholder = comment(DEBUG ? '2:promise-value' : 2)
+    )
     : txt(v)
 }
 
+// @Legibility: make variable name e, clearer
 export function make_obv_node (e, v, cleanupFuncs = []) {
   var r, o, nn, clean = [], placeholder
   if (is_fn(v)) {
