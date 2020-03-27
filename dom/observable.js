@@ -2,7 +2,7 @@
 
 import { define_prop, define_props, define_value, define_getter } from '@hyper/utils'
 import { remove_every as compactor, error } from '@hyper/utils'
-import { is_array, is_obv, is_obv_type } from '@hyper/utils'
+import { is_array, is_obv, is_fn, is_obv_type } from '@hyper/utils'
 import { emit, remove } from '@hyper/listeners'
 
 export { is_obv, is_obv_type }
@@ -38,40 +38,78 @@ export const bind2 = (l, r) => {
 
 // An observable that stores a value.
 if (DEBUG) var VALUE_LISTENERS = 0
-export const value = (initial, listeners = []) => {
-  // let listeners = []
+export const value = (initial) => {
   // if the value is already an observable, then just return it
-  if (typeof initial === 'function' && initial._obv === 'value') return initial
-  if (DEBUG) obv.gc = () => compactor(listeners)
-  if (DEBUG) define_prop(obv, 'listeners', { get: obv.gc })
-  obv.v = initial
-  obv.set = (val) => emit(listeners, obv.v, obv.v = val === undefined ? obv.v : val)
-  obv.once = (fn, do_immediately, stop_listening) => {
-    stop_listening = obv((val, prev) => {
-      fn(val, prev)
-      stop_listening()
-    }, do_immediately)
-    return stop_listening
+  if (is_obv(initial)) {
+    return initial
+  } else {
+    obv.v = initial
   }
+
+  obv.l = []
   obv._obv = 'value'
+  if (DEBUG) obv.gc = () => compactor(obv.l)
   return obv
 
   function obv (val, do_immediately) {
     return (
       val === undefined ? obv.v // getter
-    : typeof val !== 'function' ? (Object.is(obv.v, val) ? undefined :
-      // disabled for now...
-      // (DEBUG && (typeof val === 'object' && Object.prototype.toString.call(val) === '[object Object]') && error('use obv/obj_value to store plain objects (it properly deep compares them)')),
-      emit(listeners, obv.v, obv.v = val), val) // setter only sets if the value has changed (won't work for byref things like objects or arrays)
+    : typeof val !== 'function' ? (
+      Object.is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
+        emit(obv.l,
+          obv.v, // previous value
+          obv.v = val  // new value
+        ), val // return the value
+      )
     : (
-        listeners.push(val),
+        obv.l.push(val),
         (DEBUG && VALUE_LISTENERS++),
         (
           obv.v === undefined || do_immediately === false
           ? obv.v
           : val(obv.v)
         ), () => { // listener
-          remove(listeners, val)
+          remove(obv.l, val)
+          DEBUG && VALUE_LISTENERS--
+        }
+      )
+    )
+  }
+}
+
+// an observable that stores a value (same as value), but optionally, the value can be a getter function
+export const value2 = (initial) => {
+  // if the value is already an observable, then just return it
+  if (is_obv(initial)) {
+    return initial
+  } else {
+    obv.v = initial
+  }
+
+  obv.l = []
+  obv._obv = 'value'
+  if (DEBUG) obv.gc = () => compactor(obv.l)
+  return obv
+
+  function obv (val, do_immediately) {
+    return (
+      val === undefined ? (is_fn(obv.v) ? obv.v() : obv.v) // getter
+    : typeof val !== 'function' ? (
+      Object.is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
+        emit(obv.l,
+          is_fn(obv.v) ? obv.v() : obv.v, // previous value
+          is_fn(obv.v) ? val : obv.v = val  // new value
+        ), val // return the value
+      )
+    : (
+        obv.l.push(val),
+        (DEBUG && VALUE_LISTENERS++),
+        (
+          obv.v === undefined || do_immediately === false
+          ? obv.v
+          : val(obv.v)
+        ), () => { // listener
+          remove(obv.l, val)
           DEBUG && VALUE_LISTENERS--
         }
       )
@@ -83,6 +121,31 @@ export const inc = (obv, n = 1) => obv(obv.v + n)
 export const dec = (obv, n = 1) => obv(obv.v - n)
 export const mul = (obv, n = 2) => obv(obv.v * n)
 export const div = (obv, n = 2) => obv(obv.v / n)
+
+export const obv_inc = (obv) => {
+  obv.inc = (n = 1) => emit(obv.l, obv.v, obv.v = obv.v + n)
+}
+export const obv_dec = (obv) => {
+  obv.dec = (n = 1) => emit(obv.l, obv.v, obv.v = obv.v - n)
+}
+export const obv_mul = (obv) => {
+  obv.mul = (n = 2) => emit(obv.l, obv.v, obv.v = obv.v * n)
+}
+export const obv_div = (obv) => {
+  obv.div = (n = 2) => emit(obv.l, obv.v, obv.v = obv.v / n)
+}
+export const obv_set = (obv) => {
+  obv.set = (val) => emit(obv.l, obv.v, obv.v = val === undefined ? obv.v : val)
+}
+export const obv_once = (obv) => {
+  obv.once = (fn, do_immediately, _stop_listening) => {
+    _stop_listening = obv((val, prev) => {
+      fn(val, prev)
+      _stop_listening()
+    }, do_immediately)
+    return _stop_listening
+  }
+}
 
 
 // an observable object
