@@ -1,6 +1,6 @@
 import { error, __debug } from '@hyper/utils'
 import { define_getter, define_value } from '@hyper/utils'
-import { is_array } from '@hyper/utils'
+import { is_array, is_fn } from '@hyper/utils'
 // import { random_id } from '@hyper/utils'
 import { h, s } from '@hyper/dom/hyper-hermes'
 import { doc, getElementById, isNode } from '@hyper/dom-base'
@@ -15,7 +15,7 @@ import { update_obv } from '@hyper/dom/observable-event'
 // since it's the global context, should it be cached somewhere?
 
 export const global_ctx = () => {
-  var ctx
+  var ctx, __lang = []
   var el = getElementById('global_ctx') || new_ctx({
     _id:0, ERROR: 'THIS IS THE GLOBAL CTX',
     o: {},
@@ -32,6 +32,22 @@ export const global_ctx = () => {
     m: update_obv,
     V: obj_value,
     N: (fn, ...args) => new_ctx(ctx, fn, ...args),
+    // this is theglobal scope... this needs to be per context
+    $L: (lang) => {
+      if (lang) __lang.push(lang)
+      else __lang.pop()
+    },
+    L: (txt, ...vars) => {
+      var i = 0, translation
+      var len = __lang.length
+      for (; i < len; i++) {
+        if (translation = __lang[i][txt]) {
+          return is_fn(translation) ? translation(vars) : translation
+        }
+      }
+
+      return txt
+    },
     z: h.z,
   }, (G) => {
     ctx = G
