@@ -289,7 +289,10 @@ export const set_attr = (e, key_, v, cleanupFuncs = []) => {
       // in weird cases with stuff like data- or other attrs containing hyphens, use setAttribute
       e.setAttribute(k, v)
     } else if (v !== undefined) {
-      if (is_fn(o = custom_attrs[k])) {
+      if (is_array(v)) {
+       // not sure if this will cause problems. I can't think of any other reason to pass an array of values, unless there are multiple listeners or decorators or something. leaving it for now..
+       for (i = 0; i < v.length; i++) set_attr(e, k, v[i], cleanupFuncs)
+     } else if (is_fn(o = custom_attrs[k])) {
         o(cleanupFuncs, e, v)
       } else if (~(i = k.indexOf(':'))) {
         // for namespaced attributes, such as xlink:href
