@@ -1,75 +1,81 @@
 
 import { each, assign, int, next_tick } from '@hyper/utils'
-import { win, body, getComputedStyle } from '@hyper/dom-base'
+import { win, body, getComputedStyle, set_style } from '@hyper/dom-base'
 import { on, off } from '@hyper/dom-base'
 import { get_prop_value, int_prop_value, sum_prop_values } from '@hyper/dom-base'
+import { value } from '@hyper/dom/observable'
 
 import raf from '@hyper/dom/request-animation-frame'
 
 import h from '@hyper/dom/hyper-hermes'
 
-function nlElastic (node, keypath, padding = 24) {
+function nlElastic (node) {
   var ta = node
   var $ta = node
 
-  // if elastic already applied (or is the mirror element)
-  // if Ractive, then just exit.
-  if (RACTIVE && $ta.dataset.elastic) return
   // modern platforms should error
-  if (DEBUG && $ta.dataset.elastic) error('this is already an elastic textarea')
+  // if (DEBUG && $ta.elastic) error('this is already an elastic textarea')
 
-  // ensure the element is a textarea, and browser is capable
-  // if Ractive, just exit, cause it's a programmer error or an old browser
-  if (RACTIVE && ta.nodeName !== 'TEXTAREA' || (ANCIENT && !getComputedStyle)) return
   // modern platforms will error
   if (DEBUG && ta.nodeName !== 'TEXTAREA') error('node is not a textarea')
   if (DEBUG && (ANCIENT && !getComputedStyle)) error('getComputedStyle not supported on this platform')
 
   // set these properties before measuring dimensions
-  assign($ta.style, {
+  // assign($ta.style, {
+  //   overflow: 'hidden',
+  //   overflowY: 'hidden',
+  //   wordWrap: 'break-word',
+  // })
+
+  // var elastic = $ta.elastic = {w: value(), h: value()}
+
+  var ta_height = value()
+  var ta_overflowY = value()
+
+  set_style($ta, {
     overflow: 'hidden',
-    overflowY: 'hidden',
+    overflowY: ta_overflowY,
     wordWrap: 'break-word',
+    height: ta_height,
   })
 
-  // force text reflow
-  var text = ta.value
-  ta.value = ''
-  ta.value = text
+  if (ANCIENT) {
+    // force text reflow
+    var text = ta.value
+    ta.value = ''
+    ta.value = text
+  }
 
-  if (RACTIVE) var ractive = Ractive.getNodeInfo(node).ractive
   var mirrorInitStyle =
     'position:absolute;top:-999px;right:auto;bottom:auto;' +
     'left:0;overflow:hidden;box-sizing:content-box;' +
-    (ANCIENT
-    ? '-webkit-box-sizing:content-box;-moz-box-sizing:content-box;' :'') +
     'min-height:0 !important;height:0 !important;padding:0;' +
-    'word-wrap:break-word;border:0'
+    'word-wrap:break-word;border:0' + (ANCIENT
+    ? '-webkit-box-sizing:content-box;-moz-box-sizing:content-box;' : '')
 
   var taStyle = getComputedStyle(ta)
   var borderBox = get_prop_value(taStyle, 'box-sizing') === 'border-box' || (ANCIENT && (
       get_prop_value(taStyle, '-moz-box-sizing') === 'border-box' ||
       get_prop_value(taStyle, '-webkit-box-sizing') === 'border-box'))
-  var boxOuter = !borderBox ? {width: 0, height: 0} : {
-    width: sum_prop_values(taStyle, 'border-right-width|padding-right|padding-left|border-left-width'),
-    height: sum_prop_values(taStyle, 'border-top-width|padding-top|padding-bottom|border-bottom-width'),
-  }
+
+  var boxOuter = borderBox ? [
+    // width
+    sum_prop_values(taStyle, 'border-right-width|padding-right|padding-left|border-left-width'),
+    //height
+    sum_prop_values(taStyle, 'border-top-width|padding-top|padding-bottom|border-bottom-width'),
+  ] : [0, 0]
+
   var minHeightValue = int_prop_value(taStyle, 'min-height')
   var heightValue = int_prop_value(taStyle, 'height')
-  var minHeight = Math.max(minHeightValue, heightValue) - boxOuter.height
+  var minHeight = Math.max(minHeightValue, heightValue) - boxOuter[1]
   var maxHeight = int_prop_value(taStyle, 'max-height')
   var copyStyle = 'font-family|font-size|font-weight|font-style|letter-spacing|line-height|text-transform|word-spacing|text-indent'.split('|')
-  var mirrored, active, mirror
 
-  var forceAdjust = () => {
+  var active, mirror
+
+  const forceAdjust = () => {
     active = false
     adjust()
-  }
-
-  var teardown = () => {
-    mirror.rm()
-    off(ta, 'resize', forceAdjust)
-    if (!ANCIENT) off(ta, 'input', adjust)
   }
 
   if (ANCIENT) {
@@ -82,19 +88,18 @@ function nlElastic (node, keypath, padding = 24) {
     aria: { hidden: 'true' },
     tabindex: -1,
     style: mirrorInitStyle,
-    data: { elastic: true },
   }))
 
-  $ta.dataset.elastic = true
+  var mirror_width = value()
+  set_style(mirror, {
+    overflowY: ta_overflowY,
+    width: mirror_width,
+  })
 
-  /*
-   * methods
-   */
 
-  function initMirror () {
+  const initMirror = () => {
     var mirrorStyle = mirrorInitStyle
 
-    mirrored = ta
     // copy the essential styles from the textarea to the mirror
     taStyle = getComputedStyle(ta)
     each(copyStyle, (val) => {
@@ -105,76 +110,74 @@ function nlElastic (node, keypath, padding = 24) {
     else mirror.style = mirrorStyle
   }
 
-  function adjust () {
-    if (mirrored !== ta) {
-      initMirror()
-    }
-
+  const adjust = () => {
     // active flag prevents actions in function from calling adjust again
     if (!active) {
       // @Performance: all of this reading and writing of values likely causes many layout recalcs.
       // probably want to do it in an animation frame or something... eg. read it all, then set it in raf
-      var taHeight = ta.style.height ? int(ta.style.height) : 0
+      // another (better) way to do it will be to make the values obvs and then when the system is in place to only update dom values in an animation frame, it'll alraedy be done.
+      // var taHeight = ta.style.height ? int(ta.style.height) : 0
+      var taHeight = int(ta_height() || 0)
+      console.log(taHeight, ta_height())
       var taComputedStyleWidth = get_prop_value(getComputedStyle(ta), 'width')
       var mirrorHeight, width, overflow
       active = true
 
       mirror.value = ta.value // optional whitespace to improve animation
-      mirror.style.overflowY = ta.style.overflowY
+      // mirror.style.overflowY = ta_overflowY()
 
       // ensure getComputedStyle has returned a readable 'used value' pixel width
-      if (taComputedStyleWidth.substr(taComputedStyleWidth.length - 2, 2) === 'px') {
+      if (taComputedStyleWidth.substr(-2) === 'px') {
         // update mirror width in case the textarea width has changed
-        width = int(taComputedStyleWidth) - boxOuter.width
-        mirror.style.width = width + 'px'
+        mirror_width(int(taComputedStyleWidth) - boxOuter[0])
       }
 
       mirrorHeight = mirror.scrollHeight
 
+      // if max-height is set, then have it scroll.
       if (mirrorHeight > maxHeight) {
         mirrorHeight = maxHeight
         overflow = 'scroll'
       } else if (mirrorHeight < minHeight) {
         mirrorHeight = minHeight
       }
-      mirrorHeight += boxOuter.height + 24
-      ta.style.overflowY = overflow || 'hidden'
+
+      mirrorHeight += boxOuter[1] + 24
+      ta_overflowY(overflow || 'hidden')
 
       if (taHeight < mirrorHeight) {
-        ta.style.height = mirrorHeight + 'px'
-        if (RACTIVE) raf(() => ractive.fire('elastic:resize', $ta))
+        // ta.style.height = mirrorHeight + 'px'
+        ta_height(mirrorHeight)
       }
 
       // small delay to prevent an infinite loop
-      next_tick(() => active = false)
+      next_tick(() => {
+        // elastic.h(mirrorHeight)
+        // elastic.w(width)
+        active = false
+      })
     }
   }
 
   // listen
   if (ANCIENT && 'onpropertychange' in ta && 'oninput' in ta) {
-    // IE9
     ta['oninput'] = ta.onkeyup = adjust
   } else {
     on(ta, 'input', adjust)
-    // ta['oninput'] = adjust
   }
 
   on(ta, 'resize', forceAdjust)
 
-  if (RACTIVE) {
-    if (keypath) ractive.observe(keypath, function (v) {
-      forceAdjust()
-    })
+  next_tick(() => {
+    initMirror()
+    adjust()
+  })
 
-    ractive.on('elastic:adjust', function () {
-      initMirror()
-      forceAdjust()
-    })
+  return () => {
+    mirror.rm()
+    off(ta, 'resize', forceAdjust)
+    if (!ANCIENT) off(ta, 'input', adjust)
   }
-
-  next_tick(adjust)
-
-  return RACTIVE ? { teardown } : teardown
 }
 
 export default nlElastic
