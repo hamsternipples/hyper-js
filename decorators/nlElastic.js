@@ -1,5 +1,5 @@
 
-import { each, assign, int, next_tick } from '@hyper/utils'
+import { each, assign, float, next_tick } from '@hyper/utils'
 import { win, body, getComputedStyle, set_style } from '@hyper/dom-base'
 import { on, off } from '@hyper/dom-base'
 import { get_prop_value, int_prop_value, sum_prop_values } from '@hyper/dom-base'
@@ -116,20 +116,17 @@ function nlElastic (node) {
       // @Performance: all of this reading and writing of values likely causes many layout recalcs.
       // probably want to do it in an animation frame or something... eg. read it all, then set it in raf
       // another (better) way to do it will be to make the values obvs and then when the system is in place to only update dom values in an animation frame, it'll alraedy be done.
-      // var taHeight = ta.style.height ? int(ta.style.height) : 0
-      var taHeight = int(ta_height() || 0)
-      console.log(taHeight, ta_height())
+      var taHeight = float(ta_height() || 0)
       var taComputedStyleWidth = get_prop_value(getComputedStyle(ta), 'width')
       var mirrorHeight, width, overflow
       active = true
 
       mirror.value = ta.value // optional whitespace to improve animation
-      // mirror.style.overflowY = ta_overflowY()
 
       // ensure getComputedStyle has returned a readable 'used value' pixel width
       if (taComputedStyleWidth.substr(-2) === 'px') {
         // update mirror width in case the textarea width has changed
-        mirror_width(int(taComputedStyleWidth) - boxOuter[0])
+        mirror_width(float(taComputedStyleWidth) - boxOuter[0])
       }
 
       mirrorHeight = mirror.scrollHeight

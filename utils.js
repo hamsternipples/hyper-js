@@ -22,6 +22,7 @@ export const __debug = (msg) => {
 
 export const int = (s) => parseInt(s, 10)
 export const hex = (s) => parseInt(s, 16)
+export const float = parseFloat
 
 export const is_empty = (value) => (!value || typeof value !== 'object') ? !value : !(is_array(value) ? value : Object.keys(value)).length
 

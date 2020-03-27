@@ -125,7 +125,7 @@ export const prevent_default = (event) => {
   return false
 }
 
-import { is_obv, is_obj, is_num, is_str, every, camelize } from '@hyper/utils'
+import { is_obv, is_obj, is_num, is_str, every, camelize, float } from '@hyper/utils'
 import { transform, value2 } from '@hyper/dom/observable'
 
 export const set_style = (e, style, cleanupFuncs = []) => {
@@ -143,7 +143,7 @@ export const set_style = (e, style, cleanupFuncs = []) => {
       }
       var getter = (v) => {
         v = e.style[camelize(k)]
-        return v.substr(-2) === 'px' ? +v : v
+        return v.substr(-2) === 'px' ? float(v) : v
       }
       if (is_obv(val)) {
         cleanupFuncs.push(val(setter, 1))
