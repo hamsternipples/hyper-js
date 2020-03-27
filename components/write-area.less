@@ -1,7 +1,4 @@
 .write-area {
-  position: relative;
-  margin: 0 4px;
-
   > button {
     position: absolute;
     bottom: 10px;
@@ -11,8 +8,6 @@
   }
 
   > textarea {
-    border: solid 1px #ccc;
-    border-radius: 8px;
     width: 100%;
     padding: 4px 8px;
     resize: vertical;
@@ -23,14 +18,14 @@
       transition: border-color 0.1s ease-out;
     }
 
-    &:focus { border-color: #ffca7a; }
+    // &:focus { border-color: #ffca7a; }
     &.error { border-color: #ff0200; }
     &.success { border-color: #0002ff; }
   }
 
   > .tip {
     position: absolute;
-    bottom: 4px;
+    bottom: 2px;
     left: 50%;
     transform: translateX(-50%);
     padding: 8px 16px;
