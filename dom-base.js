@@ -24,6 +24,9 @@ export const txt = (t) => doc.createTextNode(t)
 export const comment = (t) => doc.createComment(t)
 export const cE = (el) => doc.createElement(el)
 
+export const qS = (query) => doc.querySelector(query)
+export const qSA = (query) => doc.querySelectorAll(query)
+
 export const isNode = (el) => el && el.nodeType
 export const isText = (el) => el && el.nodeType == 3
 export const getElementById = (el) => typeof el === 'string' ? doc.getElementById(el) : el
@@ -120,6 +123,40 @@ export const dispatch_event = (element, event, val) => {
 export const prevent_default = (event) => {
   event && (event.preventDefault(), event.stopImmediatePropagation())
   return false
+}
+
+import { is_obv, is_obj, is_num, is_str, every, camelize } from '@hyper/utils'
+import { transform, value2 } from '@hyper/dom/observable'
+
+export const set_style = (e, style, cleanupFuncs = []) => {
+  if (is_obj(style)) {
+    every(style, (val, k) => {
+      // this is to make positioning elements a whole lot easier.
+      // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
+      var setter = (v) => {
+        if (DEBUG && is_num(v) && (k = camelize(k)) && (
+          k === 'order' ||
+          k === 'grid-column-start'
+        )) error(`this will automatically become '${k}': ${v}px. coerce it to a string like this '${k}': ${v}+''`)
+
+        e.style[camelize(k)] = is_num(v) && k !== 'opacity' ? v + 'px' : v
+      }
+      var getter = (v) => {
+        v = e.style[camelize(k)]
+        return v.substr(-2) === 'px' ? +v : v
+      }
+      if (is_obv(val)) {
+        cleanupFuncs.push(val(setter, 1))
+        val(getter())
+      } else {
+        if (DEBUG && !is_str(val) && !is_num(val))
+          error(`unknown value (${val}) for style: ${k}`)
+        else setter(val)
+      }
+    })
+  } else {
+    e.setAttribute('style', style)
+  }
 }
 
 export const dom_loaded = (callback) => {

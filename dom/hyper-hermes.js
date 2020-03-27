@@ -17,7 +17,7 @@ import { random_id } from '@hyper/random'
 
 import { win, doc, customElements } from '@hyper/global'
 import { isNode, txt, comment, cE } from '@hyper/dom-base'
-import { lookup_parent_with_attr } from '@hyper/dom-base'
+import { lookup_parent_with_attr, set_style } from '@hyper/dom-base'
 import { Node_prototype } from '@hyper/dom-base'
 
 // add your own (or utilise this to make your code smaller!)
@@ -559,25 +559,6 @@ export const make_obv_child_node = (parent, v, cleanupFuncs = []) => {
     r = make_child_node(parent, v, cleanupFuncs)
   }
   return r
-}
-
-export const set_style = (e, style, cleanupFuncs = []) => {
-  if (is_obj(style)) {
-    every(style, (val, k, setter) => {
-      // this is to make positioning elements a whole lot easier.
-      // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
-      setter = (v) => { e.style[k] = is_num(v) && k !== 'opacity' ? v + 'px' : v }
-      if (is_obv(val)) {
-        cleanupFuncs.push(val(setter, 1))
-      } else {
-        if (DEBUG && !is_str(val) && !is_num(val)) error('unknown value for style: '+k)
-        else setter(val)
-      }
-    // }
-    })
-  } else {
-    e.setAttribute('style', style)
-  }
 }
 
 // shortcut to append multiple children (w/ cleanupFuncs)
