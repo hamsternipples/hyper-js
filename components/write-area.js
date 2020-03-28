@@ -3,6 +3,7 @@
 import nl_elastic from '@hyper/decorators/nlElastic'
 import { is_str, is_obj, after, next_tick, error } from '@hyper/utils'
 import { prevent_default } from '@hyper/dom-base'
+import { bind2 } from '@hyper/dom/observable'
 
 import './write-area.less'
 
@@ -57,6 +58,11 @@ const write_area = ({h, v, t, c, z, L, $L}, lang) => (opts, cb) => {
   })
 
   if (TMP) window.txt = txt, window.textarea = textarea
+
+  if (opts.value) {
+    // two-way bind the value. now, the div.write-area will contain a value field which will be able to get/set the value of the underneith textarea.
+    z(bind2(opts.value, txt))
+  }
 
 
   var write_area
