@@ -121,6 +121,7 @@ export const inc = (obv, n = 1) => obv(obv.v + n)
 export const dec = (obv, n = 1) => obv(obv.v - n)
 export const mul = (obv, n = 2) => obv(obv.v * n)
 export const div = (obv, n = 2) => obv(obv.v / n)
+export const toggle = (obv) => obv(!obv.v)
 
 export const obv_inc = (obv) => {
   obv.inc = (n = 1) => emit(obv.l, obv.v, obv.v = obv.v + n)
@@ -133,6 +134,9 @@ export const obv_mul = (obv) => {
 }
 export const obv_div = (obv) => {
   obv.div = (n = 2) => emit(obv.l, obv.v, obv.v = obv.v / n)
+}
+export const obv_toggle = (obv) => {
+  obv.toggle = () => emit(obv.l, obv.v, obv.v = !obv.v)
 }
 export const obv_set = (obv) => {
   obv.set = (val) => emit(obv.l, obv.v, obv.v = val === undefined ? obv.v : val)
