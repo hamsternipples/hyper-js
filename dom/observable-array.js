@@ -109,13 +109,6 @@ export default class ObservableArray extends MixinEmitter(Array) {
     return this
   }
 
-  insert (idx, val) {
-    this.emit('change', { type: 'insert', val, idx })
-    super.splice(idx, 0, val)
-    this._up()
-    return this
-  }
-
   remove (idx) {
     if (typeof idx !== 'number') {
       var iidx = this.indexOf(idx)
