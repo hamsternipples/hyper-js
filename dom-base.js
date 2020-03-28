@@ -134,20 +134,21 @@ export const set_style = (e, style, cleanupFuncs = []) => {
       // this is to make positioning elements a whole lot easier.
       // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
       var setter = (v) => {
-        if (DEBUG && is_num(v) && (k = camelize(k)) && (
+        k = camelize(k)
+        if (DEBUG && is_num(v) && (
           k === 'order' ||
-          k === 'grid-column-start'
+          k === 'gridColumnStart'
         )) error(`this will automatically become '${k}': ${v}px. coerce it to a string like this '${k}': ${v}+''`)
 
-        e.style[camelize(k)] = is_num(v) && k !== 'opacity' ? v + 'px' : v
+        e.style[k] = is_num(v) && v > 1 ? v + 'px' : v
       }
       var getter = (v) => {
         v = e.style[camelize(k)]
-        return v.substr(-2) === 'px' ? float(v) : v
+        return v && v.substr(-2) === 'px' ? float(v) : v
       }
       if (is_obv(val)) {
         cleanupFuncs.push(val(setter, 1))
-        val(getter())
+        if (val() == null) val(getter())
       } else {
         if (DEBUG && !is_str(val) && !is_num(val))
           error(`unknown value (${val}) for style: ${k}`)
