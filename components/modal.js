@@ -4,17 +4,22 @@ import './modal.css'
 
 export default function modal (frame, opts = {}) {
 
-  // @Incomplete: needs to know about its parent element, so that it can append itself into it
-
-  let el = new_ctx(undefined, function (G) {
-    let {h, v, t} = G
+  var el = new_ctx(undefined, function (G) {
+    var {h, v, t} = G
     opts.title = v(opts.title || null) // null so that it gets a value. if it remains undefined, the obv won't init.
     opts.content = v(opts.content(G))
     opts.footer = v(opts.footer)
-    let no_close_button = opts.close_button != 1
+    var no_close_button = opts.close_button != 1
 
-    let el =
-    h('.modal-background', {boink: (ev) => { ev.target === el && !opts.no_background_close && opts.close() }},
+    var el =
+    h('.modal-background', {
+      boink: (ev) => {
+        ev.target === el && !opts.no_background_close && opts.close()
+      },
+      keydown: (ev) => {
+        ev.which === 27 && !opts.no_background_close && opts.close()
+      }
+    },
       h('.modal',
         t(opts.title, (title) => title ?
           h('h1.header', opts.title,
