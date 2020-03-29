@@ -38,6 +38,7 @@ export const bind2 = (l, r) => {
 
 // An observable that stores a value.
 if (DEBUG) var VALUE_LISTENERS = 0
+if (DEBUG) var OBV_ID = 0
 export const value = (initial) => {
   // if the value is already an observable, then just return it
   if (is_obv(initial)) {
@@ -48,6 +49,8 @@ export const value = (initial) => {
 
   obv.l = []
   obv._obv = 'value'
+  if (DEBUG) obv._id = OBV_ID++
+  if (DEBUG) obv._type = 'value'
   if (DEBUG) obv.gc = () => compactor(obv.l)
   return obv
 
@@ -88,6 +91,8 @@ export const value2 = (initial) => {
 
   obv.l = []
   obv._obv = 'value'
+  if (DEBUG) obv._id = OBV_ID++
+  if (DEBUG) obv._type = 'value2'
   if (DEBUG) obv.gc = () => compactor(obv.l)
   return obv
 
@@ -123,26 +128,26 @@ export const mul = (obv, n = 2) => obv(obv.v * n)
 export const div = (obv, n = 2) => obv(obv.v / n)
 export const toggle = (obv) => obv(!obv.v)
 
-export const obv_inc = (obv) => {
-  obv.inc = (n = 1) => emit(obv.l, obv.v, obv.v = obv.v + n)
+export const obv_inc_fn = (obv) => {
+  return (n = 1) => emit(obv.l, obv.v, obv.v = obv.v + n)
 }
-export const obv_dec = (obv) => {
-  obv.dec = (n = 1) => emit(obv.l, obv.v, obv.v = obv.v - n)
+export const obv_dec_fn = (obv) => {
+  return (n = 1) => emit(obv.l, obv.v, obv.v = obv.v - n)
 }
-export const obv_mul = (obv) => {
-  obv.mul = (n = 2) => emit(obv.l, obv.v, obv.v = obv.v * n)
+export const obv_mul_fn = (obv) => {
+  return (n = 2) => emit(obv.l, obv.v, obv.v = obv.v * n)
 }
-export const obv_div = (obv) => {
-  obv.div = (n = 2) => emit(obv.l, obv.v, obv.v = obv.v / n)
+export const obv_div_fn = (obv) => {
+  return (n = 2) => emit(obv.l, obv.v, obv.v = obv.v / n)
 }
-export const obv_toggle = (obv) => {
-  obv.toggle = () => emit(obv.l, obv.v, obv.v = !obv.v)
+export const obv_toggle_fn = (obv) => {
+  return () => emit(obv.l, obv.v, obv.v = !obv.v)
 }
-export const obv_set = (obv) => {
-  obv.set = (val) => emit(obv.l, obv.v, obv.v = val === undefined ? obv.v : val)
+export const obv_set_fn = (obv) => {
+  return (val) => emit(obv.l, obv.v, obv.v = val === undefined ? obv.v : val)
 }
-export const obv_once = (obv) => {
-  obv.once = (fn, do_immediately, _stop_listening) => {
+export const obv_once_fn = (obv) => {
+  return (fn, do_immediately, _stop_listening) => {
     _stop_listening = obv((val, prev) => {
       fn(val, prev)
       _stop_listening()
@@ -214,6 +219,8 @@ could change this to work with backbone Model - but it would become ugly.
 
 export const property = (model, key) => {
   obv._obv = 'property'
+  if (DEBUG) obv._id = OBV_ID++
+  if (DEBUG) obv._type = 'property'
   return obv
 
   function obv (val) {
@@ -277,6 +284,8 @@ export const compute = (obvs, compute_fn) => {
   }
 
   obv._obv = 'value'
+  if (DEBUG) obv._id = OBV_ID++
+  if (DEBUG) obv._type = 'compute'
   if (DEBUG) obv.gc = () => compactor(listeners)
   if (DEBUG) define_prop(obv, 'listeners', { get: obv.gc })
   obv.x = () => { for (fn of removables) fn() }
