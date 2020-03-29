@@ -140,23 +140,31 @@ export const boink = (cleanupFuncs, el, obv, opts) => {
     else obv.call(el, ev, el)
   }
 
-  cleanupFuncs.push(
-    on(el, 'click', fn, opts),
-    on(el, 'touchstart', fn, opts)
-  )
+  on(el, 'click', fn, opts)
+  on(el, 'touchstart', fn, opts)
+
+  cleanupFuncs.z(() => {
+    off(el, 'click', fn, opts),
+    off(el, 'touchstart', fn, opts)
+  })
 }
 
 export const press = (cleanupFuncs, el, obv, pressed = true, normal = false) => {
   var normal_fn = (e) => { stop_propagation(e); obv(normal) }
   var pressed_fn = (e) => { stop_propagation(e); obv(pressed) }
 
+  on(el, 'mouseup', normal_fn)
+  on(el, 'mousedown', pressed_fn)
+  on(el, 'touchend', normal_fn)
+  on(el, 'touchstart', pressed_fn)
+
   // passing attr=0 here to tell it to not grab the value of any attribute on the el.
-  cleanupFuncs.push(
-    on(el, 'mouseup', normal_fn),
-    on(el, 'mousedown', pressed_fn),
-    on(el, 'touchend', normal_fn),
-    on(el, 'touchstart', pressed_fn)
-  )
+  cleanupFuncs.z(() => {
+    off(el, 'mouseup', normal_fn)
+    off(el, 'mousedown', pressed_fn)
+    off(el, 'touchend', normal_fn)
+    off(el, 'touchstart', pressed_fn)
+  })
 }
 
 export const observe_event = (cleanupFuncs, el, observe_obj) => {

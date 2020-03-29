@@ -59,13 +59,22 @@ export let common_tags = ['div']
 
 function hyper_hermes (create_element) {
   let cleanupFuncs = []
-  let z = (fn) => {
+  let add_to_cleanupFuncs = (fn) => {
     cleanupFuncs.push(
       DEBUG && !is_fn(fn)
       ? error('adding a non-function value to cleanupFuncs')
       : fn
     )
     return fn
+  }
+
+  if (DEBUG) {
+    var push_fn = cleanupFuncs.push
+    cleanupFuncs.push = (fn, ...args) => {
+      if (typeof fn !== 'function') debugger
+      if (args.length) debugger
+      push_fn.call(cleanupFuncs, fn, ...args)
+    }
   }
 
   function h(...args) {
@@ -118,7 +127,7 @@ function hyper_hermes (create_element) {
           l.then((v) => {
             let node = make_child_node(e, v, cleanupFuncs)
             if (DEBUG && r.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
-            else e.rC(node, r), z(() => node.rm())
+            else e.rC(node, r), add_to_cleanupFuncs(() => node.rm())
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
       } else if (is_fn(l)) {
@@ -136,7 +145,7 @@ function hyper_hermes (create_element) {
   }
 
   h.x = cleanupFuncs
-  h.z = cleanupFuncs.z = z
+  h.z = cleanupFuncs.z = add_to_cleanupFuncs
   h.cleanup = () => { call_each(cleanupFuncs) }
 
   return h
@@ -184,7 +193,8 @@ export let custom_attrs = {
   }
 }
 
-export const set_attr = (e, key_, v, cleanupFuncs = []) => {
+export const set_attr = (e, key_, v, cleanupFuncs) => {
+  if (DEBUG) assert_cleanupFuncs(cleanupFuncs)
   // convert short attributes to long versions. s -> style, c -> className
   var s, o, i, k = short_attrs[key_] || key_
   if (is_fn(v)) {
@@ -319,6 +329,7 @@ export const set_attr = (e, key_, v, cleanupFuncs = []) => {
 }
 
 export const arrayFragment = (parent, arr, cleanupFuncs) => {
+  if (DEBUG) assert_cleanupFuncs(cleanupFuncs)
   var v, frag = doc.createDocumentFragment()
   var activeElement = (el) => el === (parent.activeElement || doc.activeElement)
   // function deepActiveElement() {
@@ -339,7 +350,7 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
       if (type == 'unshift') {
         for (i = ev.values.length - 1; i >= 0; i--) {
           o = make_child_node(parent, ev.values[i], cleanupFuncs)
-          parent.iB(isNode(o) ? o : txt(o), arr[0])
+          parent.iB(isNode(o) ? o : txt(o), arr[0], cleanupFuncs)
         }
       }
       else if (type == 'push') {
@@ -347,7 +358,8 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
           o = make_child_node(parent, ev.values[i], cleanupFuncs)
           parent.iB(
             isNode(o) ? o : txt(o),
-            arr[arr.length + ev.values.length - i - 1]
+            arr[arr.length + ev.values.length - i - 1],
+            cleanupFuncs,
           )
         }
       }
@@ -369,7 +381,7 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
         }
         if (ev.add) for (i = 0; i < ev.add.length; i++) {
           o = make_child_node(parent, ev.add[i], cleanupFuncs)
-          parent.iB(isNode(o) ? o : txt(o), arr[j])
+          parent.iB(isNode(o) ? o : txt(o), arr[j], cleanupFuncs)
         }
         // working (just in case rC has some weird cases):
         // if (ev.remove) for (i = 0; i < ev.remove; i++)
@@ -387,7 +399,7 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
           if (i !== (j = oo.indexOf(o))) {
             if (activeElement(o) || o.focused === 1) i = 1
             o.rm()
-            parent.iB(o, arr[i - 1])
+            parent.iB(o, arr[i - 1], cleanupFuncs)
             if (i === 1) o.focus(), o.focused = 0
           }
         }
@@ -402,7 +414,7 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
       }
       else if (type == 'insert') {
         if ((i = ev.idx) < 0) i += len // -idx
-        parent.iB(ev.val, make_child_node(parent, arr[i], cleanupFuncs))
+        parent.iB(ev.val, arr[i], cleanupFuncs)
       }
       else if (type == 'reverse') {
         for (i = 0, j = +(arr.length / 2); i < j; i++)
@@ -513,7 +525,8 @@ export const make_child_node = (parent, v, cleanupFuncs, _placeholder) => {
     : txt(v)
 }
 
-export const make_obv_child_node = (parent, v, cleanupFuncs = []) => {
+export const make_obv_child_node = (parent, v, cleanupFuncs) => {
+  if (DEBUG) assert_cleanupFuncs(cleanupFuncs)
   var r, o, nn, clean = [], placeholder
   if (is_fn(v)) {
     if (is_obv(v)) {
@@ -536,7 +549,7 @@ export const make_obv_child_node = (parent, v, cleanupFuncs = []) => {
           else parent.rC(nn, r)
         }
 
-        parent.iB(nn, placeholder)
+        parent.iB(nn, placeholder, cleanupFuncs)
         /*
         not totally sure this is working. I'm trying to save the resulting element back into the array that's used for removal. for example, imagine that I have a string or a number and I add it the dom, when I go to remove them, it won't know what elements they were.
         similarly, for promises, once they resolve, it should set the element in the array with the resolved node.
@@ -549,7 +562,10 @@ export const make_obv_child_node = (parent, v, cleanupFuncs = []) => {
                 v.then(v => val[i] = v)
               } else if (!isNode(v)) {
                 val[i] = nn.childNodes[i]
-              } else if (DEBUG) error('uhh???')
+              } else if (DEBUG) {
+                debugger
+                error('uhh???')
+              }
             }
           }), val)
           : nn
@@ -574,7 +590,10 @@ import { value2 } from '@hyper/dom/observable'
 export const set_style = (e, style, cleanupFuncs) => {
   if (!cleanupFuncs) {
     cleanupFuncs = el_ctx(e).x
+  } else if (DEBUG) {
+    assert_cleanupFuncs(cleanupFuncs)
   }
+
   if (is_obj(style)) {
     every(style, (val, k) => {
       // this is to make positioning elements a whole lot easier.
@@ -593,7 +612,7 @@ export const set_style = (e, style, cleanupFuncs) => {
         return v && v.substr(-2) === 'px' ? float(v) : v
       }
       if (is_obv(val)) {
-        cleanupFuncs.push(val(setter, 1))
+        cleanupFuncs.z(val(setter, 1))
         if (val() == null) val(getter())
       } else {
         if (DEBUG && !is_str(val) && !is_num(val))
@@ -616,6 +635,11 @@ import { getElementById } from '@hyper/dom-base'
 import { value, transform, compute } from '@hyper/dom/observable'
 import obj_value from '@hyper/obv/obj_value'
 import { update_obv } from '@hyper/dom/observable-event'
+
+export const assert_cleanupFuncs = (cleanupFuncs) => {
+  if (DEBUG && (!is_array(cleanupFuncs) || !cleanupFuncs.z))
+    error('bad cleanupFuncs')
+}
 
 // I'm not sure this is the best way to do this...
 // since it's the global context, should it be cached somewhere?
@@ -716,6 +740,7 @@ export const new_ctx = (G = global_ctx(), fn, ...args) => {
     N: define_value((fn, ...args) => new_ctx(ctx, fn, ...args)),
     c: define_value((obvs, compute_fn, obv) => {
       obv = compute(obvs, compute_fn)
+      if (DEBUG && !obv.x) error('not a valid cleanup function')
       cleanupFuncs.push(obv.x)
       return obv
     }),
