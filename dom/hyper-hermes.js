@@ -449,8 +449,8 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
     }
 
     arr.parent = parent
-    arr.on('change', onchange)
-    cleanupFuncs.z(() => { arr.off('change', onchange) })
+    arr.sub(onchange)
+    cleanupFuncs.z(() => { arr.unsub(onchange) })
   }
   return frag
 }

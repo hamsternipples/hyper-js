@@ -1,5 +1,6 @@
 
-import { empty_array, extend, swap, define_prop, define_getter, error } from '@hyper/utils'
+import { empty_array, extend, swap, is_fn } from '@hyper/utils'
+import { define_prop, define_getter, error } from '@hyper/utils'
 import { is_obv, value } from '@hyper/dom/observable'
 import { make_child_node } from '@hyper/dom/hyper-hermes'
 import { comment } from '@hyper/dom-base'
@@ -17,7 +18,7 @@ export default class RenderingArray extends ObservableArray {
     super()
     opts = extend({ plain: true }, opts)
     let k, fl, self = this
-    self.fn = typeof data === 'function' ? (fn = data) : fn
+    self.fn = is_fn(data) ? (fn = data) : fn
     fl = self.fl = fn.length
     self.G = G
     self.d = data instanceof ObservableArray ? data : new ObservableArray() && DEBUG && error('data must be a ObservableArray')
@@ -37,7 +38,7 @@ export default class RenderingArray extends ObservableArray {
 
     // finally, if min is an obv, it'll want to ensure any missing empty ones are rendered
     if (k = opts.min) {
-      self.empty_fn = typeof opts.empty_fn === 'function' ? opts.empty_fn : () => 'empty'
+      self.empty_fn = is_fn(opts.empty_fn) ? opts.empty_fn : () => 'empty'
       if (is_obv(k)) k((new_min) => {
         let real_len = self.length
         let empty_els = real_len - self._d.length
@@ -166,9 +167,9 @@ export default class RenderingArray extends ObservableArray {
           i = min - len
           if (min && i > 0) v = super.splice(-i, i)
           let listen = (e) => { t.push(e) }
-          self.d.on('change', listen)
+          self.d.sub(listen)
           self.d.sort(e.compare)
-          self.d.off('change', listen)
+          self.d.unsub(listen)
           for (v of t) super.emit('change', v)
           if (min && i > 0) v = super.splice(-i, 0, ...v)
           break
@@ -214,10 +215,10 @@ export default class RenderingArray extends ObservableArray {
       }
 
       if (self._obv_len) self._obv_len(len)
-      self.d.off('change', onchange)
+      self.d.unsub(onchange)
       self.d = data
       define_prop(self, 'obv_len', define_getter(() => self.d.obv_len))
-      data.on('change', onchange)
+      data.sub(onchange)
     }
 
     return self.d
@@ -262,7 +263,7 @@ export default class RenderingArray extends ObservableArray {
     // clean up contexts (and remove any arrayFragment elements too)
     this._onchange({type: 'empty'})
     // stop listening to data changes (in case the data element is used in more than one place)
-    this.d.off('change', this._onchange)
+    this.d.unsub(this._onchange)
   }
 }
 

@@ -4,15 +4,17 @@ import { empty_array, is_array } from '@hyper/utils'
 import { define_prop, define_getter } from '@hyper/utils'
 import { extend, swap, error } from '@hyper/utils'
 import isEqual from '@hyper/isEqual'
-// import invoke from '@hyper/lodash/invoke'
-// import set from '@hyper/lodash/set'
 
-export default class ObservableArray extends MixinEmitter(Array) {
+import { mixin_pubsub } from '@hyper/listeners'
+
+export default class ObservableArray extends Array {
   // this is so all derived objects are of type Array, instead of ObservableArray
   static get [Symbol.species]() { return Array }
   constructor (array) {
     super()
     this.observable = 'array'
+    this.listeners = []
+    mixin_pubsub(this)
     this._up()
     define_prop(this, 'obv_len', define_getter(() => this._obv_len || (this._obv_len = value(this.length))))
     if (is_array(array) && array.length) super.push(...array)
@@ -20,7 +22,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   pop () {
     if (!this.length) return
-    this.emit('change', { type: 'pop' })
+    this.pub({ type: 'pop' })
     var ret = super.pop()
     this._up()
     return ret
@@ -28,7 +30,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   push (...items) {
     if (!items.length) return this.length
-    this.emit('change', { type: 'push', values: items })
+    this.pub({ type: 'push', values: items })
     var ret = super.push(...items)
     this._up()
     return ret
@@ -36,20 +38,20 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   reverse () {
     if (this.length <= 1) return this
-    this.emit('change', { type: 'reverse' })
+    this.pub({ type: 'reverse' })
     return super.reverse()
   }
 
   shift () {
     if (!this.length) return
-    this.emit('change', { type: 'shift' })
+    this.pub({ type: 'shift' })
     var ret = super.shift()
     this._up()
     return ret
   }
 
   swap (from_idx, to_idx) {
-    this.emit('change', {type: 'swap', from: from_idx, to: to_idx })
+    this.pub({type: 'swap', from: from_idx, to: to_idx })
     swap(this, to_idx, from_idx)
   }
 
@@ -66,7 +68,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
       }
 
       if (k !== i) {
-        this.emit('change', {type: 'swap', from: k, to: i })
+        this.pub({type: 'swap', from: k, to: i })
         swap(arr, i, k)
       }
     }
@@ -82,7 +84,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   empty () {
     if (this.length > 0) {
-      this.emit('change', { type: 'empty' })
+      this.pub({ type: 'empty' })
       this.length = 0
       this._up()
     }
@@ -97,13 +99,13 @@ export default class ObservableArray extends MixinEmitter(Array) {
   }
 
   replace (idx, val) {
-    this.emit('change', { type: 'replace', val, idx, old: this[idx] })
+    this.pub({ type: 'replace', val, idx, old: this[idx] })
     super.splice(idx, 1, val)
     return this
   }
 
   move (from_idx, to_idx) {
-    this.emit('change', { type: 'move', from: from_idx, to: to_idx })
+    this.pub({ type: 'move', from: from_idx, to: to_idx })
     var el = super.splice(from_idx, 1)
     super.splice(to_idx, 0, el[0])
     return this
@@ -115,7 +117,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
       if (~iidx) idx = iidx
       else return this
     }
-    this.emit('change', { type: 'remove', idx })
+    this.pub({ type: 'remove', idx })
     super.splice(idx, 1)
     this._up()
     return this
@@ -123,7 +125,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   splice (idx, remove, ...add) {
     if (idx === undefined || (remove !== undefined && (+idx >= this.length || +remove < 0))) return []
-    this.emit('change', { type: 'splice', idx, remove, add })
+    this.pub({ type: 'splice', idx, remove, add })
     var ret = super.splice(idx, remove, ...add)
     this._up()
     return ret
@@ -131,7 +133,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
   unshift (...items) {
     if (!items.length) return this.length
-    this.emit('change', { type: 'unshift', values: items })
+    this.pub({ type: 'unshift', values: items })
     var ret = super.unshift(...items)
     this._up()
     return ret
@@ -140,7 +142,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   set (idx, val) {
     if (idx < 0) idx += this.length
     if (isEqual(this[idx], val)) return
-    this.emit('change', { type: 'set', idx, val })
+    this.pub({ type: 'set', idx, val })
     this[idx] = val
     return this
   }
@@ -154,7 +156,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
   //   if (obj.observable === 'object') invoke(obj, path, value)
   //   else {
   //     set(obj, path, value)
-  //     this.emit('change', { type: 'set', idx, val: obj })
+  //     this.pub({ type: 'set', idx, val: obj })
   //   }
   //   return obj
   // }
@@ -167,7 +169,7 @@ export default class ObservableArray extends MixinEmitter(Array) {
 
 // this function is to replicate changes made to one obv arr to another one(s)
 export const ObservableArrayApplies = (oarr, ...arr) => {
-  oarr.on('change', (e) => {
+  var onchange = (e) => {
     var a, t
     switch (e.type) {
       case 'swap':
@@ -217,7 +219,9 @@ export const ObservableArrayApplies = (oarr, ...arr) => {
         for (a of arr) a[e.type]()
         break
     }
-  })
+  }
+  oarr.sub(onchange)
+  return () => oarr.unsub(onchange)
 }
 
 export const ObservableArrayChange = (arr, evt, t) => {
@@ -269,5 +273,7 @@ export const ObservableArrayChange = (arr, evt, t) => {
 }
 
 export const ObservableArrayApply = (oarr, arr) => {
-  oarr.on('change', (evt) => ObservableArrayChange(oarr, evt))
+  var fn = (evt) => ObservableArrayChange(oarr, evt)
+  oarr.sub(fn)
+  return () => oarr.unsub(fn)
 }
