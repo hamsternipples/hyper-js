@@ -91,11 +91,12 @@ export const lookup_parent_with_attr = (el, attr, filter) => {
 // if you want non-passive, simply pass your own opts: eg.
 //   on(emitter, 'click', ..., { passive: false, capture: true })
 //             -kenny 14-01-2020
-let event_opts = (opts) =>
-  opts == null ? false
+let event_opts = (opts) => {
+  return opts == null ? false
   : opts === false ? { passive: true }
   : opts === true ? { passive: true, capture: true }
   : opts
+}
 
 // event stuff
 // @Cleanup: replace all instances of 'addEventListener' with this function (to save a few bytes)
@@ -122,6 +123,11 @@ export const dispatch_event = (element, event, val) => {
 
 export const prevent_default = (event) => {
   event && (event.preventDefault(), event.stopImmediatePropagation())
+  return false
+}
+
+export const stop_propagation = (event) => {
+  event && (event.stopImmediatePropagation())
   return false
 }
 

@@ -1,14 +1,14 @@
 
-import { error, each } from '@hyper/utils'
+import { error, each, is_fn } from '@hyper/utils'
 import { is_obv, ensure_obv, bind2, transform, compute } from '@hyper/dom/observable'
-import { on, off, dispatch_event, prevent_default } from '@hyper/dom-base'
+import { on, off, dispatch_event, prevent_default, stop_propagation } from '@hyper/dom-base'
 
 
 // listen to any event, reading `attr` and calling `listener` with the value.
 // `attr` can also be a function which can be used to transform the value passed to listener.
 export const listen = (element, event, attr, listener, do_immediately, opts) => {
-  if (DEBUG && typeof listener !== 'function') error(`listener isn't a function`)
-  let on_event = (e) => { listener(typeof attr === 'function' ? attr(e) : attr ? element[attr] : e) }
+  if (DEBUG && !is_fn(listener)) error(`listener isn't a function`)
+  let on_event = (e) => { listener(is_fn(attr) ? attr(e) : attr ? element[attr] : e) }
   on(element, event, on_event, opts)
   do_immediately && attr && on_event()
   return () => off(element, event, on_event, opts)
@@ -17,7 +17,7 @@ export const listen = (element, event, attr, listener, do_immediately, opts) => 
 // observe any event, reading any attribute.
 // returns an observable.
 export const obv_event = (element, attr = 'value', event = 'keyup', event_filter, listener) => {
-  event_filter = typeof event_filter === 'function' ? event_filter
+  event_filter = is_fn(event_filter) ? event_filter
     : ((e) => e.which === 13 && !e.shiftKey)
 
   observable._obv = 'event'
@@ -26,8 +26,8 @@ export const obv_event = (element, attr = 'value', event = 'keyup', event_filter
   function observable (val) {
     return (
       val === undefined ? val
-    : typeof val !== 'function' ?  undefined //read only
-    : (typeof listener === 'function' ? listener
+    : !is_fn(val) ?  undefined //read only
+    : (is_fn(listener) ? listener
         : (listener = (e) => event_filter(e) ? (val(element[attr], e), prevent_default(e), true) : false), // BADNESS!! val is defined in the observable function!
         (on(element, event, listener), () => {
           off(element, event, listener)
@@ -42,7 +42,7 @@ export const obv_event = (element, attr = 'value', event = 'keyup', event_filter
 // which will modify the value of `obv` whenever the returned function is called.
 export const update_obv = (obv, update_fn) => {
   if (DEBUG) ensure_obv(obv)
-  if (DEBUG) if (typeof update_fn !== 'function') error('update_fn should be a function which updates the obv value, eg. (v) => !v')
+  if (DEBUG) if (!is_fn(update_fn)) error('update_fn should be a function which updates the obv value, eg. (v) => !v')
   return (evt) => obv(update_fn(evt, obv()))
 }
 
@@ -56,7 +56,7 @@ export const attribute = (element, attr = 'value', event = 'input') => {
   function observable (val, do_immediately) {
     return (
       val === undefined ? element[attr]
-    : typeof val !== 'function' ?
+    : !is_fn(val) ?
         dispatch_event(element, event, element[attr] = val)
     : (is_obv(val) && val(observable), // 2-way bindings
         listen(element, event, attr, val, do_immediately))
@@ -83,7 +83,7 @@ export const select = (element, attr = 'value', event = 'change') => {
   function observable (val, do_immediately) {
     return (
       val === undefined ? element.options[element.selectedIndex][attr]
-    : typeof val !== 'function' ? set_attr(val)
+    : !is_fn(val) ? set_attr(val)
     : listen(element, event, get_attr, val, do_immediately)
     )
   }
@@ -101,7 +101,7 @@ export const toggle = (el, up_event, down_event) => {
   function observable (val) {
     return (
       val === undefined ? _val
-    : typeof val !== 'function' ? undefined // read only
+    : !is_fn(val) ? undefined // read only
     : (
         on(el, up_event, on_up = on_up(val)),
         on(el, down_event || up_event, on_down = on_down(val)),
@@ -134,20 +134,28 @@ export const add_event = (cleanupFuncs, e, event, listener, opts) => {
 //
 //      -kenny (2020-02-14)
 export const boink = (cleanupFuncs, el, obv, opts) => {
-  // passing attr=0 here to tell it to not grab the value of any attribute on the el.
+  var fn = (ev) => {
+    stop_propagation(ev)
+    if (is_obv(obv)) obv(!obv())
+    else obv.call(el, ev, el)
+  }
+
   cleanupFuncs.push(
-    listen(el, 'click', 0, (ev) => { is_obv(obv) ? obv(!obv()) : obv.call(el, ev, el) }, 0, opts),
-    listen(el, 'touchstart', 0, (ev) => { prevent_default(ev); is_obv(obv) ? obv(!obv()) : obv.call(el, ev, el) }, 0, opts)
+    on(el, 'click', fn, opts),
+    on(el, 'touchstart', fn, opts)
   )
 }
 
 export const press = (cleanupFuncs, el, obv, pressed = true, normal = false) => {
+  var normal_fn = (e) => { stop_propagation(e); obv(normal) }
+  var pressed_fn = (e) => { stop_propagation(e); obv(pressed) }
+
   // passing attr=0 here to tell it to not grab the value of any attribute on the el.
   cleanupFuncs.push(
-    listen(el, 'mouseup', 0, () => { obv(normal) }),
-    listen(el, 'mousedown', 0, () => { obv(pressed) }),
-    listen(el, 'touchend', 0, (e) => { prevent_default(e); obv(normal) }),
-    listen(el, 'touchstart', 0, (e) => { prevent_default(e); obv(pressed) })
+    on(el, 'mouseup', normal_fn),
+    on(el, 'mousedown', pressed_fn),
+    on(el, 'touchend', normal_fn),
+    on(el, 'touchstart', pressed_fn)
   )
 }
 
@@ -200,7 +208,7 @@ export const observe_event = (cleanupFuncs, el, observe_obj) => {
     // case 'touchstart':
     // case 'touchend':
       if (!~s.indexOf('.')) {
-        if (DEBUG && typeof v !== 'function') error('observer must be a function')
+        if (DEBUG && !is_fn(v)) error('observer must be a function')
         cleanupFuncs.z(
           obv_event(el, observe_obj[s+'.attr'], (observe_obj[s+'.event'] || s), observe_obj[s+'.valid'])(v)
         )
