@@ -17,7 +17,8 @@ import { random_id } from '@hyper/random'
 
 import { win, doc, customElements } from '@hyper/global'
 import { isNode, txt, comment, cE } from '@hyper/dom-base'
-import { lookup_parent_with_attr, set_style } from '@hyper/dom-base'
+import { lookup_parent_with_attr } from '@hyper/dom-base'
+// import { set_style } from '@hyper/dom/style'
 import { Node_prototype } from '@hyper/dom-base'
 
 // add your own (or utilise this to make your code smaller!)
@@ -563,6 +564,184 @@ export const make_obv_child_node = (parent, v, cleanupFuncs = []) => {
   }
   return r
 }
+
+// inlined @hyper/dom/style (cause rollup can't figure out how to concat js files)
+
+import { camelize, float } from '@hyper/utils'
+import { value2 } from '@hyper/dom/observable'
+
+export const set_style = (e, style, cleanupFuncs) => {
+  if (!cleanupFuncs) {
+    cleanupFuncs = el_ctx(e).x
+  }
+  if (is_obj(style)) {
+    every(style, (val, k) => {
+      // this is to make positioning elements a whole lot easier.
+      // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
+      var setter = (v) => {
+        k = camelize(k)
+        if (DEBUG && is_num(v) && (
+          k === 'order' ||
+          k === 'gridColumnStart'
+        )) error(`this will automatically become '${k}': ${v}px. coerce it to a string like this '${k}': ${v}+''`)
+
+        e.style[k] = is_num(v) && v > 1 ? v + 'px' : v
+      }
+      var getter = (v) => {
+        v = e.style[camelize(k)]
+        return v && v.substr(-2) === 'px' ? float(v) : v
+      }
+      if (is_obv(val)) {
+        cleanupFuncs.push(val(setter, 1))
+        if (val() == null) val(getter())
+      } else {
+        if (DEBUG && !is_str(val) && !is_num(val))
+          error(`unknown value (${val}) for style: ${k}`)
+        else setter(val)
+      }
+    })
+  } else {
+    e.setAttribute('style', style)
+  }
+}
+
+
+// hyper-ctx
+
+import { define_getter } from '@hyper/utils'
+import { getElementById } from '@hyper/dom-base'
+
+// default obv functions provided
+import { value, transform, compute } from '@hyper/dom/observable'
+import obj_value from '@hyper/obv/obj_value'
+import { update_obv } from '@hyper/dom/observable-event'
+
+// I'm not sure this is the best way to do this...
+// since it's the global context, should it be cached somewhere?
+
+export const global_ctx = () => {
+  var ctx, __lang = []
+  var el = getElementById('global_ctx') || new_ctx({
+    _id:0, ERROR: 'THIS IS THE GLOBAL CTX',
+    o: {},
+    h, s,
+    // @Incomplete: it doesn't save much space. should perhaps the obvs that are not used be optional?
+    v: value,
+    t: transform,
+    // c: compute,
+    c: (obvs, compute_fn, obv) => {
+      obv = compute(obvs, compute_fn)
+      h.z(obv.x)
+      return obv
+    },
+    m: update_obv,
+    V: obj_value,
+    N: (fn, ...args) => new_ctx(ctx, fn, ...args),
+    // this is theglobal scope... this needs to be per context
+    $L: (lang) => {
+      if (lang) __lang.push(lang)
+      else __lang.pop()
+    },
+    L: (txt, ...vars) => {
+      var i = 0, translation
+      var len = __lang.length
+      for (; i < len; i++) {
+        if (translation = __lang[i][txt]) {
+          return is_fn(translation) ? translation(vars) : translation
+        }
+      }
+
+      return txt
+    },
+    x: h.x,
+    z: h.z,
+  }, (G) => {
+    ctx = G
+    // bind the global ctx to a meta tag in the head called 'global_ctx'
+    return doc.head.aC(h('meta#global_ctx'))
+  })
+  return EL_CTX.get(el) // el_ctx(el)
+}
+
+const EL_CTX = new Map()
+export const el_ctx = (el) => {
+  let ctx
+  while ((ctx = EL_CTX.get(el)) == null && (el = el.parentNode) != null) {}
+  return ctx || global_ctx()
+}
+
+export const el_cleanup = (el) => {
+  let ctx = EL_CTX.get(el)
+  if (ctx) {
+    ctx.cleanup()
+    EL_CTX.delete(el)
+  }
+}
+
+export const cleanup = () => {
+  for (let [el, ctx] of EL_CTX.entries()) {
+    // there are potentially cases where you may hold on to a node for a little bit before reinserting it into the dom.
+    // so, maybe it should be added to a list for gc after some timeout. if it has a parent again, remove it from the list
+    if (!el.parentNode) {
+      ctx.cleanup()
+      EL_CTX.delete(el)
+    }
+  }
+}
+
+let last_id = 0
+export const new_ctx = (G = global_ctx(), fn, ...args) => {
+  if (DEBUG && typeof fn !== 'function') error('new_ctx is now called with a function which returns an element')
+
+  let cleanupFuncs = []
+  let obvs = Object.create(G.o, {})
+  let ctx = Object.create(G, {
+    _id: define_value(++last_id),
+    o: define_value(obvs),
+    x: define_value(cleanupFuncs),
+    z: define_value((fn) => {
+      cleanupFuncs.push(
+        DEBUG && typeof fn !== 'function'
+        ? error('adding a non-function value to cleanupFuncs')
+        : fn
+      )
+      return fn
+    }),
+    _h: define_value(null, true),
+    _s: define_value(null, true),
+    h: define_getter(() => ctx._h || (ctx._h = G.h.context())),
+    s: define_getter(() => ctx._s || (ctx._s = G.s.context())),
+    cleanupFuncs: define_value(cleanupFuncs),
+    N: define_value((fn, ...args) => new_ctx(ctx, fn, ...args)),
+    c: define_value((obvs, compute_fn, obv) => {
+      obv = compute(obvs, compute_fn)
+      cleanupFuncs.push(obv.x)
+      return obv
+    }),
+    parent: define_value(G),
+    cleanup: define_value((f) => {
+      while (f = cleanupFuncs.pop()) f()
+      if (f = ctx._h) f.cleanup()
+      if (f = ctx._s) f.cleanup()
+    })
+  })
+
+  let el = fn(ctx, ...args)
+
+  if (DEBUG && is_array(el)) error(`this will assign a context to your element, so an array won't work. instead, wrap these elements in a container element`)
+  if (DEBUG && !isNode(el) && el != null && !el.then) error('you must return an element when creating a new context')
+
+  if (el && el.then) {
+    el.then(el => EL_CTX.set(el, ctx))
+  } else {
+    EL_CTX.set(el, ctx)
+  }
+
+  return el
+}
+
+// shortcut to remove myself from the dom (and cleanup if it's got nodes)
+Node_prototype.rm = function () { return el_cleanup(this), this.remove() }
 
 // shortcut to append multiple children (w/ cleanupFuncs)
 Node_prototype.iB = function (el, ref, cleanupFuncs) {

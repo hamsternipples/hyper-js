@@ -125,41 +125,6 @@ export const prevent_default = (event) => {
   return false
 }
 
-import { is_obv, is_obj, is_num, is_str, every, camelize, float } from '@hyper/utils'
-import { transform, value2 } from '@hyper/dom/observable'
-
-export const set_style = (e, style, cleanupFuncs = []) => {
-  if (is_obj(style)) {
-    every(style, (val, k) => {
-      // this is to make positioning elements a whole lot easier.
-      // if you want a numeric value for some reason for something other than px, coerce it to a string first, eg. {order: '1', 'grid-column-start': '3'}
-      var setter = (v) => {
-        k = camelize(k)
-        if (DEBUG && is_num(v) && (
-          k === 'order' ||
-          k === 'gridColumnStart'
-        )) error(`this will automatically become '${k}': ${v}px. coerce it to a string like this '${k}': ${v}+''`)
-
-        e.style[k] = is_num(v) && v > 1 ? v + 'px' : v
-      }
-      var getter = (v) => {
-        v = e.style[camelize(k)]
-        return v && v.substr(-2) === 'px' ? float(v) : v
-      }
-      if (is_obv(val)) {
-        cleanupFuncs.push(val(setter, 1))
-        if (val() == null) val(getter())
-      } else {
-        if (DEBUG && !is_str(val) && !is_num(val))
-          error(`unknown value (${val}) for style: ${k}`)
-        else setter(val)
-      }
-    })
-  } else {
-    e.setAttribute('style', style)
-  }
-}
-
 export const dom_loaded = (callback) => {
   if (ANCIENT) {
     /* Mozilla, Chrome, Opera */

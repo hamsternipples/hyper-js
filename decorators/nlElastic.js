@@ -1,6 +1,7 @@
 
 import { each, assign, float, next_tick } from '@hyper/utils'
-import { win, body, getComputedStyle, set_style } from '@hyper/dom-base'
+import { set_style } from '@hyper/dom/style'
+import { win, body, getComputedStyle } from '@hyper/dom-base'
 import { on, off } from '@hyper/dom-base'
 import { get_prop_value, int_prop_value, sum_prop_values } from '@hyper/dom-base'
 import { value } from '@hyper/dom/observable'

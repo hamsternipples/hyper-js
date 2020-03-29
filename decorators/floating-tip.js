@@ -1,5 +1,5 @@
 import { h } from '@hyper/dom/hyper-hermes'
-import { set_style } from '@hyper/dom-base'
+import { set_style } from '@hyper/dom/style'
 import { doc, body, doc_el, on, off, IS_IE } from '@hyper/dom-base'
 import { setInterval, clearInterval } from '@hyper/global'
 
