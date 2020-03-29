@@ -154,10 +154,8 @@ function eventProxy (ev, target) {
  */
 
 function makeProxy (ev, target) {
-  return function proxy () {
-    var args = Array.prototype.slice.call(arguments),
-      evs = [ ev ].concat(args)
-    target.emit.apply(target, evs)
+  return function proxy (...args) {
+    target.emit.apply(target, [ev].concat(args))
   }
 }
 

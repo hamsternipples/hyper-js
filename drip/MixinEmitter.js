@@ -1,6 +1,8 @@
 
 import common from './common'
 
+import { is_fn } from '@hyper/utils'
+
 export var MixinEmitter = Base => {
   var EE = class extends Base {
 
@@ -25,13 +27,9 @@ export var MixinEmitter = Base => {
 
       if (!map[ev]) {
         map[ev] = fn
-      } else if ('function' === typeof map[ev]) {
+      } else if (is_fn(map[ev])) {
         map[ev] = [ map[ev], fn ]
       } else {
-        // if (map[ev].length > 5) {
-        //   console.log(ev, map[ev].length)
-        //   if (map[ev].length > 9) debugger
-        // }
         map[ev].push(fn)
       }
 
@@ -58,13 +56,12 @@ export var MixinEmitter = Base => {
      */
 
     off (ev, fn) {
-      var argc = arguments.length
-      if (!this._events || argc === 0) {
+      if (!this._events || !ev) {
         this._events = {}
         return this
       }
 
-      if (argc === 1) {
+      if (!fn) {
         this._events[ev] = null
         return this
       }
@@ -72,7 +69,7 @@ export var MixinEmitter = Base => {
       var fns = this._events[ev]
       if (!fns) return this
 
-      if ('function' === typeof fns && fns == fn) {
+      if (is_fn(fns) && fns == fn) {
         this._events[ev] = null
       } else {
         for (var i = 0; i < fns.length; i++) {
@@ -117,7 +114,7 @@ export var MixinEmitter = Base => {
       }
 
       var argc = arguments.length
-      if ('function' == typeof fns) {
+      if (is_fn(fns)) {
         // handle single callback
         if (argc == 1) {
           fns.call(this)
@@ -191,7 +188,7 @@ export var MixinEmitter = Base => {
       if (!this._events) return []
       var fns = this._events[ev]
       if (!fns) return []
-      if ('function' === typeof fns) return [ fns ]
+      if (is_fn(fns)) return [ fns ]
       else return fns
     }
   }
