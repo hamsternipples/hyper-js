@@ -177,8 +177,14 @@ export const observe_event = (cleanupFuncs, el, observe_obj) => {
       cleanupFuncs.z(attribute(el, s, observe_obj[s+'.on'])(v))
     }
     else if (s === 'hidden') {
-      // cleanupFuncs.z(v(v => { el.style.display = v ? 'none' : '' }, 1))
-      cleanupFuncs.z(v(v => { el.hidden = v }))
+      ANCIENT
+      ? cleanupFuncs.z(v(v => { el.style.display = v ? 'none' : '' }, 1))
+      : cleanupFuncs.z(v(v => { el.hidden = v }))
+    }
+    else if (s === 'visible') {
+      ANCIENT
+      ? cleanupFuncs.z(v(v => { el.style.display = !v ? 'none' : '' }, 1))
+      : cleanupFuncs.z(v(v => { el.hidden = !v }))
     }
     else if (s === 'hover') {
       cleanupFuncs.z(toggle(el, 'mouseover', 'mouseout')(v))
