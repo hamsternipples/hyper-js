@@ -42,7 +42,8 @@ export default function modal (frame, opts = {}) {
     return el
   })
 
-  el.close = opts.close = () => { el.rm() }  // rm both cleans and removes the element
+  var close = el.close = () => { el.rm() }  // rm both cleans and removes the element
+  if (!opts.close) opts.close = close 
   frame.aC(el)
   return el
 }
