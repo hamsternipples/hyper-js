@@ -22,11 +22,13 @@ function positioned (node, target) {
     node.y(rect.y)
   }
 
-  var entry, obv = new ResizeObserver(entries => {
+  var entry
+  var obv = new ResizeObserver(entries => {
     for (entry of entries) setter(entry.contentRect)
     // for (entry of entries) setter('border-box' ? entry.borderBoxSize : entry.contentBoxSize)
-  }).observe(node, {box: sizing})
+  })
 
+  obv.observe(node, {box: sizing})
   setter(bounding_rect(node))
   return () => obv.disconnect()
 }
