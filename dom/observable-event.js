@@ -43,7 +43,9 @@ export const obv_event = (element, attr = 'value', event = 'keyup', event_filter
 export const update_obv = (obv, update_fn) => {
   if (DEBUG) ensure_obv(obv)
   if (DEBUG) if (!is_fn(update_fn)) error('update_fn should be a function which updates the obv value, eg. (v) => !v')
-  return (evt) => obv(update_fn(evt, obv()))
+  // old way. I don't like it.
+  // return (evt) => obv(update_fn(evt, obv()))
+  return (evt) => obv(update_fn(obv(), evt))
 }
 
 
