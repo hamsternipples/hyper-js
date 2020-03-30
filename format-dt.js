@@ -1,21 +1,21 @@
-import { each } from '@hyper/utils'
+import { is_fn } from '@hyper/utils'
 import { sprintf } from '@hyper/format'
-import { DAY_NAMES, DAY_NAMES_SHORT, MONTH_NAMES, MONTH_NAMES_SHORT } from '@hyper/lingua/dates'
+import { RELATIVE_UNITS as DEFAULT_FORMAT } from '@hyper/lingua/dates'
 
-// @Incomplete: - move locale configuration to lingua
 // @Incomplete: - merge the locale with 'date-format' so they share
 // see moment and also: https://github.com/betsol/time-delta/blob/master/lib/time-delta.js
 
 export const time_units = (() => {
   var divider = 1
   return [
-    ['seconds', 1000],
-    ['minutes',   60],
-    ['hours',     60],
-    ['days',      24],
-    ['weeks',      7],
-    ['months', 4.348], // 7 days/week * 4.348 weeks/month * 12 months/year = 365.232 (0.018 days off from julian year of 365.25)
-    ['years',     12]
+    ['seconds',    1000],
+    ['minutes',      60],
+    ['hours',        60],
+    ['days',         24],
+    ['weeks',         7],
+    // 7 days/week * 4.348 weeks/month * 12 months/year = 365.242248
+    ['months', 4.348122],
+    ['years',        12],
   ].map((unit) => {
     unit[1] = divider = divider * unit[1]
     return unit
@@ -31,142 +31,86 @@ export const dt2unit = (dt) => {
   }
 }
 
-export const dt2units = (dt) => {
+// if max units is specified, abort early
+export const dt2units = (dt, max_units = 3) => {
   dt = Math.abs(dt)
   var results = []
-  each(time_units, (unit) => {
+  var i = 0, unit
+  for (; i < time_units.length; i++) {
+    unit = time_units[i]
     var divider = unit[1]
     var value = dt > 0 ? Math.floor(dt / divider) : 0
     var key = unit[0]
+    var len
     dt -= value * divider
     results[key] = value
-    if (value > 0) results.push([key, value])
-  })
-  results.ms = dt
-  return results
-}
-
-export const format_dt = (units) => {
-  if (typeof units === 'number') units = dt2units(units)
-  var results = []
-  each(time_units, ([k]) => {
-    var v = units[k]
-    if (v !== undefined) results.push([v, k])
-  })
+    if (value > 0 && (len = results.push([key, value])) > max_units) break
+  }
+  // results.ms = dt
   return results
 }
 
 // make a simplified version of this:
 // https://github.com/moment/moment/blob/master/src/lib/duration/humanize.js
-var thresholds = {
-  ss: 44,         // a few seconds to seconds
-  s : 45,         // seconds to minute
-  m : 45,         // minutes to hour
-  h : 22,         // hours to day
-  d : 26,         // days to month
-  M : 11          // months to year
-}
+const threshold_ss = 44         // a few seconds to seconds
+const threshold_s  = 45         // seconds to minute
+const threshold_m  = 45         // minutes to hour
+const threshold_h  = 22         // hours to day
+const threshold_d  = 26         // days to month
+const threshold_M  = 11         // months to year
 
-var locales = {
-  en: {
-    months : MONTH_NAMES,
-    monthsShort : MONTH_NAMES_SHORT,
-    weekdays : DAY_NAMES,
-    weekdaysShort : DAY_NAMES_SHORT,
-    weekdaysMin : DAY_NAMES_MIN,
-    longDateFormat : {
-      LT : 'h:mm A',
-      LTS : 'h:mm:ss A',
-      L : 'DD/MM/YYYY',
-      LL : 'D MMMM YYYY',
-      LLL : 'D MMMM YYYY h:mm A',
-      LLLL : 'dddd, D MMMM YYYY h:mm A'
-    },
-    calendar : {
-      sameDay : '[Today at] LT',
-      nextDay : '[Tomorrow at] LT',
-      nextWeek : 'dddd [at] LT',
-      lastDay : '[Yesterday at] LT',
-      lastWeek : '[Last] dddd [at] LT',
-      sameElse : 'L'
-    },
-    relativeTime : {
-      future : 'in %s',
-      past : '%s ago',
-      s : 'a few seconds',
-      ss : '%d seconds',
-      m : 'a minute',
-      mm : '%d minutes',
-      h : 'an hour',
-      hh : '%d hours',
-      d : 'a day',
-      dd : '%d days',
-      M : 'a month',
-      MM : '%d months',
-      y : 'a year',
-      yy : '%d years'
-    },
-    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
-    ordinal : function (number) {
-      let b = number % 10
-      let output = (~~(number % 100 / 10) === 1) ? 'th' :
-        (b === 1) ? 'st' :
-        (b === 2) ? 'nd' :
-        (b === 3) ? 'rd' : 'th'
-      return number + output
-    }
-  }
-}
-
-export const dt2human = (dt, locale) => {
-  return dt2units(dt).map(([k, v]) =>
-    substitute_relative(
+// units: is number of time units to return (eg. ['1 day', '3 hours'])
+// join: join (or not) the units eg. `return units_array.join(join) : units_array`
+// without_suffix: omit the suffix '__ ago' or prefix 'in __'
+// locale: defaults to 'en'
+export const dt2human = (dt, num_units, join, without_suffix, locale = DEFAULT_FORMAT) => {
+  var units = dt2units(dt, num_units)
+  var arr = units.map(([k, v]) =>
+    sprintf(locale[
       k == 'seconds' ? (v <= 1 ? 's' : 'ss') :
       k == 'minutes' ? (v <= 1 ? 'm' : 'mm') :
       k == 'hours'   ? (v <= 1 ? 'h' : 'hh') :
       k == 'days'    ? (v <= 1 ? 'd' : 'dd') :
+      k == 'weeks'   ? (v <= 1 ? 'w' : 'ww') :
       k == 'months'  ? (v <= 1 ? 'M' : 'MM') :
       k == 'years'   ? (v <= 1 ? 'y' : 'yy') : '?'
-      , v, true, true, locale
-    )
+    ], v)
   )
+
+  var str
+  return join
+    ? (str = arr.join(join)) && without_suffix ? str
+      : sprintf(locale[+dt > 0 ? 'future' : 'past'], str)
+    : arr
 }
 
-export const dt2relative = (dt, without_suffix, locale) => {
-  var u = dt2unit(dt)
-  var k = u[0], v = u[1]
+export const dt2relative = (dt, without_suffix, locale = DEFAULT_FORMAT) => {
+  var [k, v] = dt2unit(dt)
 
-  // @optimise: the 'k' condition can be simplified further (save a few bytes!)
-  // also, it's backwards... look here:
+  // this may be backwards... look here:
   // https://github.com/moment/moment/blob/master/src/lib/duration/humanize.js
   // and, threshholds is handled incorrectly (cause of the non-fallthrough behaviour I want to have)
-  k = k == 'seconds' && v <= thresholds.ss ? 's' :
-      k == 'seconds' && v < thresholds.s   ? 'ss' :
-      k == 'minutes' && v <= 1             ? 'm' :
-      k == 'minutes' && v < thresholds.m   ? 'mm' :
-      k == 'hours'   && v <= 1             ? 'h' :
-      k == 'hours'   && v < thresholds.h   ? 'hh' :
-      k == 'days'    && v <= 1             ? 'd' :
-      k == 'days'    && v < thresholds.d   ? 'dd' :
-      k == 'months'  && v <= 1             ? 'M' :
-      k == 'months'  && v < thresholds.M   ? 'MM' :
-      k == 'years'   && v <= 1             ? 'y' :
-                                             'yy'
+  var str = sprintf(locale[
+         k == 'seconds' && (v <= threshold_ss ? 's'
+      : (v < threshold_s ? 'ss'               : 'm')
+    ) || k == 'minutes' && (v <= 1             ? 'm'
+      : (v < threshold_h ? 'mm'               : 'h')
+    ) || k == 'hours'   && (v <= 1             ? 'h'
+      : (v < threshold_d ? 'hh'               : 'd')
+    ) || k == 'days'    && (v <= 1             ? 'd'
+      : (v < threshold_m ? 'dd'               : 'm')
+    ) || k == 'months'  && (v <= 1             ? 'M'
+      : (v < threshold_y ? 'MM'               : 'y')
+    ) || k == 'years'   && (v <= 1             ? 'y'
+      : 'yy'
+    )
+  ], v, locale)
 
-  return substitute_relative.call(null, k, v, without_suffix, +dt > 0, locale)
+  return without_suffix ? str
+    : sprintf(locale[+dt > 0 ? 'future' : 'past'], str)
 }
 
-function substitute_relative (key, number, without_suffix, is_future, locale) {
-  var L = locales[locale || 'en']
-  var relativeTime = L.relativeTime
-  var str
-  return typeof relativeTime === 'function' ?
-    relativeTime(number, without_suffix, key, is_future) :
-    (str = sprintf(relativeTime[key], number)) && without_suffix ? str :
-      sprintf(relativeTime[is_future ? 'future' : 'past'], str)
-}
-
-// withoutSuffix = omit the future/past 'in'/'ago' suffix
+// there may be problems with this method. here's an example of processing relative time in another language:
 // function processRelativeTime(number, withoutSuffix, key, isFuture) {
 //   var format = {
 //     's': ['a few seconds', 'a few seconds ago'],

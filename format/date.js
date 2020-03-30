@@ -118,7 +118,7 @@ var flags = {
   N: (date) => getDayOfWeek(date),
 }
 
-export default function dateFormat (_date, _mask, utc, gmt) {
+export default function date_format (_date, _mask, utc, gmt) {
   var date, mask
 
   // You can't provide utc if you skip other args (use the 'UTC:' mask prefix)
