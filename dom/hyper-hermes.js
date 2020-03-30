@@ -719,19 +719,20 @@ export const new_ctx = (G = global_ctx(), fn, ...args) => {
   if (DEBUG && typeof fn !== 'function') error('new_ctx is now called with a function which returns an element')
 
   let cleanupFuncs = []
+  cleanupFuncs.z = (fn) => {
+    cleanupFuncs.push(
+      DEBUG && typeof fn !== 'function'
+      ? error('adding a non-function value to cleanupFuncs')
+      : fn
+    )
+    return fn
+  }
   let obvs = Object.create(G.o, {})
   let ctx = Object.create(G, {
     _id: define_value(++last_id),
     o: define_value(obvs),
     x: define_value(cleanupFuncs),
-    z: define_value((fn) => {
-      cleanupFuncs.push(
-        DEBUG && typeof fn !== 'function'
-        ? error('adding a non-function value to cleanupFuncs')
-        : fn
-      )
-      return fn
-    }),
+    z: define_value(cleanupFuncs.z),
     _h: define_value(null, true),
     _s: define_value(null, true),
     h: define_getter(() => ctx._h || (ctx._h = G.h.context())),
@@ -771,6 +772,7 @@ Node_prototype.rm = function () { return el_cleanup(this), this.remove() }
 
 // shortcut to append multiple children (w/ cleanupFuncs)
 Node_prototype.iB = function (el, ref, cleanupFuncs) {
+  if (!cleanupFuncs) cleanupFuncs = el_ctx(el).x
   return this.insertBefore(make_obv_child_node(this, el, cleanupFuncs), ref)
 }
 
