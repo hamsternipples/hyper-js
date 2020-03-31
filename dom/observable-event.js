@@ -136,10 +136,10 @@ export const add_event = (cleanupFuncs, e, event, listener, opts) => {
 //
 //      -kenny (2020-02-14)
 export const boink = (cleanupFuncs, el, obv, opts) => {
-  var fn = (ev) => {
-    stop_propagation(ev)
-    if (is_obv(obv)) obv(!obv())
-    else obv.call(el, ev, el)
+  var fn = (ev, continue_propagation) => {
+    if (is_obv(obv)) continue_propagation = obv(!obv())
+    else continue_propagation = obv.call(el, ev, el)
+    if (!continue_propagation) stop_propagation(ev)
   }
 
   on(el, 'click', fn, opts)
@@ -152,8 +152,8 @@ export const boink = (cleanupFuncs, el, obv, opts) => {
 }
 
 export const press = (cleanupFuncs, el, obv, pressed = true, normal = false) => {
-  var normal_fn = (e) => { stop_propagation(e); obv(normal) }
-  var pressed_fn = (e) => { stop_propagation(e); obv(pressed) }
+  var normal_fn = (e) => { if (!obv(normal)) stop_propagation(e) }
+  var pressed_fn = (e) => { if (!obv(pressed)) stop_propagation(e) }
 
   on(el, 'mouseup', normal_fn)
   on(el, 'mousedown', pressed_fn)
