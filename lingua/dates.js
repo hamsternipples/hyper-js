@@ -24,5 +24,6 @@ export const RELATIVE_UNITS = {
   M : 'a month',
   MM : '%d months',
   y : 'a year',
-  yy : '%d years'
+  yy : '%d years',
+  '?': '?',
 }

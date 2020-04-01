@@ -2,6 +2,8 @@ import { is_fn } from '@hyper/utils'
 import { sprintf } from '@hyper/format'
 import { RELATIVE_UNITS as DEFAULT_FORMAT } from '@hyper/lingua/dates'
 
+// @Bug: it can produce the text, "one day, a day ago" if it's 1 day, ~23 hours ago
+
 // @Incomplete: - merge the locale with 'date-format' so they share
 // see moment and also: https://github.com/betsol/time-delta/blob/master/lib/time-delta.js
 
@@ -44,7 +46,7 @@ export const dt2units = (dt, max_units = 3) => {
     var len
     dt -= value * divider
     results[key] = value
-    if (value > 0 && (len = results.push([key, value])) > max_units) break
+    if (value > 0 && (len = results.push([key, value])) >= max_units) break
   }
   // results.ms = dt
   return results
@@ -129,3 +131,10 @@ export const dt2relative = (dt, without_suffix, locale = DEFAULT_FORMAT) => {
 //
 //   return withoutSuffix ? format[key][0] : format[key][1]
 // }
+
+if (UNITTEST) {
+  assert.equal(dt2human(-1000 * 60 * 60 * 24, 2, ', '), 'a day ago')
+  assert.equal(dt2human(-1000 * 60 * 60 * 47, 2, ', '), 'a day, 23 hours ago')
+  assert.equal(dt2human(-1000 * 60 * 60 * 47.95, 2, ', '), 'a day, 23 hours ago')
+  assert.equal(dt2human(-1000 * 60 * 60 * 48, 2, ', '), '2 days ago')
+}
