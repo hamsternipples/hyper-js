@@ -1,4 +1,5 @@
 import { mergeDeep, objJSON, extend, next_tick } from '@hyper/utils'
+import { define_prop, error } from '@hyper/utils' // @Temporary: for deprecations
 import { random_id } from '@hyper/random'
 
 import { value } from '@hyper/dom/observable'
@@ -39,8 +40,10 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
 
   G = global_ctx()
   // frame = isNode(frame) ? frame : h('div#'+id, tmp)
-  frame = new_ctx(G, ({h}=G) => {
-    ctx = G // save the plugin frame's context
+  frame = new_ctx(G, (_ctx) => {
+    ctx = _ctx.top = _ctx // save the plugin frame's context
+
+    // don't need to use the new_ctx's h to make the element, cause it doesn't have any properties that need to be cleaned up.. slightly hacky.
     return isNode(frame) ? frame : h('div#'+id, tmp)
   })
 
@@ -53,7 +56,8 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   // })).observe(parentNode, { childList: true })
 
   win.GG = frame._G = G
-  ctx.E = E = { frame: frame, body: doc.body, win: win }
+  ctx.E = E = { body: doc.body, win: win }
+  if (DEBUG) define_prop(E, 'frame', {get: () => error('deprecated. use `frame = el_ctx(G)` now')})
 
   // @Incomplete - device orientation
   // https://crosswalk-project.org/documentation/tutorials/screens.html
@@ -65,9 +69,9 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   // TODO: add device motion events
   // https://developers.google.com/web/fundamentals/native-hardware/device-orientation/
 
-  G.o.width = value(width = frame.clientWidth || C.width || 300)
-  G.o.height = value(height = frame.clientHeight || C.height || 300)
-  G.o.resize = obj_value({width, height})
+  ctx.o.width = value(width = frame.clientWidth || C.width || 300)
+  ctx.o.height = value(height = frame.clientHeight || C.height || 300)
+  ctx.o.resize = obj_value({width, height})
 
   if ((_dpr = Math.round(win.devicePixelRatio || 1)) > 4) _dpr = 4
   G.o.dpr = value(_dpr)
@@ -77,8 +81,8 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   ;(function (_cleanup) {
     frame.cleanup = () => {
       parentNode = frame.parentNode
-      mutationObserver.disconnect()
-      mutationObserver = null
+      // mutationObserver.disconnect()
+      // mutationObserver = null
       if (parentNode) parentNode.removeChild(frame)
       if (typeof _cleanup === 'function') _cleanup()
     }
@@ -112,7 +116,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   //   })
   // }
 
-  extend(G, { C, G, E })
+  // extend(ctx, { C, E })
 
   // next thing is, `onload` should operate exactly the same as `reload`
   // it's just the function that is called which will return a working vdom.
@@ -138,14 +142,15 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
         if (e.nodeName[0] === '#') body.rm(e)
         else i++
 
-      // it would be really cool if this would work with generators, promises, async and normal functions
-      // it wouldn't be difficult actually, just borrow some code from `co`
-      // https://github.com/tj/co/blob/master/index.js
       if (typeof onload === 'function') {
-        if (e = new_ctx(G, onload)) {
+        if (e = new_ctx(ctx, onload)) {
           if (e.then) e.then(once_loaded)
           else once_loaded(e)
         }
+        // if (e = onload(G)) {
+        //   if (e.then) e.then(once_loaded)
+        //   else once_loaded(e)
+        // }
       }
 
       raf(() => {

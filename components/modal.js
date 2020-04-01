@@ -1,10 +1,10 @@
-import { new_ctx } from '@hyper/dom/hyper-ctx'
+import { new_ctx, ctx_el } from '@hyper/dom/hyper-ctx'
 
 import './modal.css'
 
-export default function modal (frame, opts = {}) {
-
-  var el = new_ctx(undefined, function (G) {
+export default function modal (G, opts = {}) {
+  G = G.top
+  var el = new_ctx(G, function (G) {
     var {h, v, t} = G
     opts.title = v(opts.title || null) // null so that it gets a value. if it remains undefined, the obv won't init.
     opts.content = v(opts.content(G))
@@ -42,8 +42,9 @@ export default function modal (frame, opts = {}) {
     return el
   })
 
+  var frame = ctx_el(G)
   var close = el.close = () => { el.rm() }  // rm both cleans and removes the element
-  if (!opts.close) opts.close = close 
+  if (!opts.close) opts.close = close
   frame.aC(el)
   return el
 }

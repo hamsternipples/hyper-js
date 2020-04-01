@@ -641,8 +641,8 @@ export const assert_cleanupFuncs = (cleanupFuncs) => {
     error('bad cleanupFuncs')
 }
 
-// I'm not sure this is the best way to do this...
-// since it's the global context, should it be cached somewhere?
+const EL_CTX = new WeakMap()
+const CTX_EL = new WeakMap()
 
 export const global_ctx = () => {
   var ctx, __lang = []
@@ -682,43 +682,63 @@ export const global_ctx = () => {
     z: h.z,
   }, (G) => {
     ctx = G
+    // ensure the global ctx does not get garbage collected
+    // it's writable so that in the all listeners cleaned up test,
+    // we can verify that all listeners were actually all cleaned up.
+    if (DEBUG) define_prop(G, 'nogc', {
+      get: () => error(`you shouldn't be cleaning up the global gc`),
+      set: v => {
+        console.info('setting global ctx to be able to be cleaned up')
+        G.nogc = v
+      }
+    })
+
     // bind the global ctx to a meta tag in the head called 'global_ctx'
     return doc.head.aC(h('meta#global_ctx'))
   })
   return EL_CTX.get(el) // el_ctx(el)
 }
 
-const EL_CTX = new Map()
 export const el_ctx = (el) => {
-  let ctx
+  var ctx
   while ((ctx = EL_CTX.get(el)) == null && (el = el.parentNode) != null) {}
   return ctx || global_ctx()
 }
 
+export const ctx_el = (ctx) => {
+  var el = CTX_EL.get(ctx)
+  if (DEBUG && !el) error(`for some reason, you held on to a reference to a ctx for a node which no longer exists.\nthis may be because you're referencing the ctx in its instantiation function. try accessing in on next_tick or referencing the element you're returning in the instantiation function, directly.\neg. (G) => { ... return el === el_ctx(G) }`)
+  return el
+}
+
 export const el_cleanup = (el) => {
-  let ctx = EL_CTX.get(el)
-  if (ctx) {
+  var ctx = EL_CTX.get(el)
+  if (ctx && !ctx.nogc) {
     ctx.cleanup()
     EL_CTX.delete(el)
+    CTX_EL.delete(ctx)
   }
 }
 
-export const cleanup = () => {
-  for (let [el, ctx] of EL_CTX.entries()) {
-    // there are potentially cases where you may hold on to a node for a little bit before reinserting it into the dom.
-    // so, maybe it should be added to a list for gc after some timeout. if it has a parent again, remove it from the list
-    if (!el.parentNode) {
-      ctx.cleanup()
-      EL_CTX.delete(el)
-    }
-  }
-}
+// not used because they've been changed to weakmaps.
+// export const cleanup_ctx = () => {
+//   for (let [el, ctx] of EL_CTX.entries()) {
+//     // there are definitely cases where you may hold on to a node for a little bit before reinserting it into the dom.
+//     // so, maybe it should be added to a list for gc after some timeout. if it has a parent again, remove it from the list. that may still have problems though...
+//     // the best solution right now is to set a field, 'nogc' to tell it not to get cleaned up
+//     if (!ctx.nogc && !el.parentNode) {
+//       ctx.cleanup()
+//       EL_CTX.delete(el)
+//     }
+//   }
+// }
 
 let last_id = 0
-export const new_ctx = (G = global_ctx(), fn, ...args) => {
+export const new_ctx = (G, fn, ...args) => {
+  if (!G) G = global_ctx()
   if (DEBUG && typeof fn !== 'function') error('new_ctx is now called with a function which returns an element')
 
-  let cleanupFuncs = []
+  var cleanupFuncs = []
   cleanupFuncs.z = (fn) => {
     cleanupFuncs.push(
       DEBUG && typeof fn !== 'function'
@@ -727,8 +747,8 @@ export const new_ctx = (G = global_ctx(), fn, ...args) => {
     )
     return fn
   }
-  let obvs = Object.create(G.o, {})
-  let ctx = Object.create(G, {
+  var obvs = Object.create(G.o, {})
+  var ctx = Object.create(G, {
     _id: define_value(++last_id),
     o: define_value(obvs),
     x: define_value(cleanupFuncs),
@@ -746,6 +766,7 @@ export const new_ctx = (G = global_ctx(), fn, ...args) => {
       return obv
     }),
     parent: define_value(G),
+    nogc: define_value(0),
     cleanup: define_value((f) => {
       while (f = cleanupFuncs.pop()) f()
       if (f = ctx._h) f.cleanup()
@@ -753,15 +774,23 @@ export const new_ctx = (G = global_ctx(), fn, ...args) => {
     })
   })
 
-  let el = fn(ctx, ...args)
+  var el = fn(ctx, ...args)
 
   if (DEBUG && is_array(el)) error(`this will assign a context to your element, so an array won't work. instead, wrap these elements in a container element`)
   if (DEBUG && !isNode(el) && el != null && !el.then) error('you must return an element when creating a new context')
 
-  if (el && el.then) {
-    el.then(el => EL_CTX.set(el, ctx))
-  } else {
+  var set_ctx = el => {
+    // debugger
     EL_CTX.set(el, ctx)
+    CTX_EL.set(ctx, el)
+  }
+
+  if (el) {
+    if (el.then) {
+      el.then(set_ctx)
+    } else {
+      set_ctx(el)
+    }
   }
 
   return el
