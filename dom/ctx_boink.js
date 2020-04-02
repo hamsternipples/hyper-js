@@ -1,5 +1,5 @@
 
-import { error } from '@hyper/utils'
+import { error, is_array } from '@hyper/utils'
 import { ctx_el } from '@hyper/dom/hyper-hermes'
 import { remove_every, each } from '@hyper/array'
 import { boink } from '@hyper/dom/observable-event'
@@ -19,7 +19,9 @@ const ctx_boink = (G) => {
     var path = ev.path, i = 0
 
     each(click_handlers, ([not_on_this_el, cb], idx) => {
-      if (!not_on_this_el || !path.includes(not_on_this_el)) {
+      if (!not_on_this_el || !(is_array(not_on_this_el)
+        ? not_on_this_el.some(el => path.includes(el))
+        : path.includes(not_on_this_el))) {
         if (!cb(ev)) click_handlers[idx] = null, i++
       }
     })
