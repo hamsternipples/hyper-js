@@ -554,6 +554,9 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
         not totally sure this is working. I'm trying to save the resulting element back into the array that's used for removal. for example, imagine that I have a string or a number and I add it the dom, when I go to remove them, it won't know what elements they were.
         similarly, for promises, once they resolve, it should set the element in the array with the resolved node.
                      -kenny 2020-02-25
+
+        after playing with it some time, I do not believe that anything more needs to be done here. there may be an edge case perhaps if there is a promise that returns a promise or something like that, but for now, it's good enough.
+                    -kenny 2020-04-01
         */
         r = is_array(val)
           ? (each(val, (v, i) => {
@@ -562,9 +565,6 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
                 v.then(v => val[i] = v)
               } else if (!isNode(v)) {
                 val[i] = nn.childNodes[i]
-              } else if (DEBUG) {
-                debugger
-                error('uhh???')
               }
             }
           }), val)
