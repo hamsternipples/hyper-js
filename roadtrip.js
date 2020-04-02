@@ -16,6 +16,7 @@ import { href_pathname, href_query, href_hash } from '@hyper/dom-base'
 import { lookup_parent_with_attr } from '@hyper/dom-base'
 import { on, off, prevent_default, which } from '@hyper/dom-base'
 import { noop, slasher, is_array, error } from '@hyper/utils'
+import { mixin_pubsub } from '@hyper/listeners'
 import isEqual from '@hyper/isEqual'
 
 const QUERYPAIR_REGEX = /^([\w\-]+)(?:=([^&]*))?$/
@@ -179,6 +180,7 @@ const isSameRoute = (routeA, routeB, dataA, dataB) => (
 export default class RoadTrip {
   constructor (base, container_el = win) {
     let self = this
+    mixin_pubsub(self)
     self.routes = []
     self.transitioning = null
     self.uniqueID = self.currentID = 1
@@ -269,14 +271,15 @@ export default class RoadTrip {
         scrollX: options.scrollX || 0,
         scrollY: options.scrollY || 0,
         options,
-        fulfil,
-        reject
+        fulfil: () => { this.pub({href, options}), fulfil() },
+        reject,
       }
     })
 
     target.promise = promise
 
     // only if we're not transitioning, will we goto the target
+    // in the case that the user navigated during a transition, this is handled in the goto function before it gets fulfiled.
     if (this.transitioning === null) this.goto_target(target)
 
     return promise
