@@ -43,9 +43,10 @@ export const obv_event = (element, attr = 'value', event = 'keyup', event_filter
 export const update_obv = (obv, update_fn) => {
   if (DEBUG) ensure_obv(obv)
   if (DEBUG) if (!is_fn(update_fn)) error('update_fn should be a function which updates the obv value, eg. (v) => !v')
-  // old way. I don't like it.
-  // return (evt) => obv(update_fn(evt, obv()))
-  return (evt) => obv(update_fn(obv(), evt))
+  // I explicitly don't return the value of obv to the listener.
+  // this is because boink will continue propagagion if it gets a truthy value.
+  // there's a pretty high chance it'll be truthy, and we don't really want to propagate unless necessary.
+  return (evt) => { obv(update_fn(obv(), evt)) }
 }
 
 
