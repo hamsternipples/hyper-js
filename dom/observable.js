@@ -294,8 +294,6 @@ export const compute = (obvs, compute_fn) => {
   if (DEBUG) obv._type = 'compute'
   if (DEBUG) obv.gc = () => compactor(obv.l)
   obv.x = () => { for (fn of removables) fn() }
-  obv.v = compute_fn.apply(null, obv_vals)
-  is_init = 0
 
   // @Speed: check to see if there is an imporovement on memory/speed, changing this to `each((fn, i) => { ... }`. because of the length variable savings passing to new_array - the 'let ' cost, it still comes to almost the same byte size.. ±6bytes.
   // the `let` is important here. (var won't work)
@@ -313,6 +311,10 @@ export const compute = (obvs, compute_fn) => {
       obv_vals[i] = fn
     }
   }
+
+  // set the inited values
+  obv.v = compute_fn.apply(null, obv_vals)
+  is_init = 0
 
   return obv
 }
