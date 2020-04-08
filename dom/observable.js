@@ -302,8 +302,7 @@ export const compute = (obvs, compute_fn) => {
   // the `let` is important here. (var won't work)
   for (let i = 0; i < len; i++) {
     fn = obvs[i]
-    if (is_fn(fn)) {
-      if (DEBUG) ensure_obv(fn)
+    if (is_obv(fn)) {
       removables.push(fn((v, _prev) => {
         _prev = obv_vals[i]
         obv_vals[i] = v
@@ -312,7 +311,7 @@ export const compute = (obvs, compute_fn) => {
       }, is_init))
     } else {
       // items in the obv array can also be literals
-      obv_vals[i] = fn
+      obv_vals[i] = is_fn(fn) ? fn() : fn
     }
   }
 
