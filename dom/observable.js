@@ -57,18 +57,19 @@ export const value = (initial) => {
   function obv (val, do_immediately) {
     return (
       val === undefined ? obv.v // getter
-    : typeof val !== 'function' ? (
+    : typeof val !== 'function' ? ( // is a set
       Object.is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
         emit(obv.l,
           obv.v, // previous value
           obv.v = val  // new value
         ), val // return the value
       )
-    : (
+    : ( // is a listener
         obv.l.push(val),
         (DEBUG && VALUE_LISTENERS++),
         (
-          obv.v === undefined || do_immediately === false
+          // if the value is uninitialised, or do_immediately is falsy, don't call he listener back immediately with the value.
+          obv.v === undefined || (do_immediately != null && !do_immediately)
           ? obv.v
           : val(obv.v)
         ), () => { // listener

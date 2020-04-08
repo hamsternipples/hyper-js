@@ -1,4 +1,3 @@
-import MixinEmitter from '@hyper/drip/MixinEmitter'
 import { value } from '@hyper/dom/observable'
 import { empty_array, is_array } from '@hyper/utils'
 import { define_prop, define_getter } from '@hyper/utils'
@@ -7,16 +6,52 @@ import isEqual from '@hyper/isEqual'
 
 import { mixin_pubsub } from '@hyper/listeners'
 
+/*
+emitter of events:
+* type -> event type
+  * swap
+    * to (idx)
+    * from (idx)
+  * move
+    * to (idx)
+    * from (idx)
+  * set
+    * idx
+    * val
+  * unshift
+    * values
+  * push
+    * values
+  * splice
+    * idx
+    * remove (count)
+    * add (values)
+  * remove
+    * idx
+  * replace
+    * idx
+    * val
+  * insert
+    * idx
+    * val
+  * sort
+  * empty
+  * pop
+  * reverse
+  * shift
+*/
+
 export default class ObservableArray extends Array {
   // this is so all derived objects are of type Array, instead of ObservableArray
   static get [Symbol.species]() { return Array }
   constructor (array) {
     super()
-    this.observable = 'array'
-    this.listeners = []
-    mixin_pubsub(this)
-    this._up()
-    define_prop(this, 'obv_len', define_getter(() => this._obv_len || (this._obv_len = value(this.length))))
+    var self = this
+    self.observable = 'array'
+    self.listeners = []
+    mixin_pubsub(self)
+    self._up()
+    define_prop(self, 'obv_len', define_getter(() => self._obv_len || (self._obv_len = value(self.length))))
     if (is_array(array) && array.length) super.push(...array)
   }
 
@@ -92,7 +127,7 @@ export default class ObservableArray extends Array {
   }
 
   reset (items) {
-    // this should be smarter. it should only do the differenc between this and items
+    // @Speed: this should be smarter. it should only do the difference between this and items
     this.empty()
     if (is_array(items)) this.push(...items)
     return this
@@ -224,19 +259,19 @@ export const ObservableArrayApplies = (oarr, ...arr) => {
   return () => oarr.unsub(onchange)
 }
 
-export const ObservableArrayChange = (arr, evt, t) => {
+export const ObservableArrayChange = (arr, evt, _t) => {
   switch (evt.type) {
     case 'swap':
-      t = arr[evt.to]
+      _t = arr[evt.to]
       arr[evt.to] = arr[evt.from]
-      arr[evt.from] = t
+      arr[evt.from] = _t
       break
     case 'move':
-      t = arr.splice(evt.from, 1)
-      arr.splice(evt.to, 0, t[0])
+      _t = arr.splice(evt.from, 1)
+      arr.splice(evt.to, 0, _t[0])
       break
     case 'set':
-      t = arr[evt.idx]
+      _t = arr[evt.idx]
       arr[evt.idx] = evt.val
       break
     case 'unshift':

@@ -217,7 +217,7 @@ export default class RenderingArray extends ObservableArray {
       if (self._obv_len) self._obv_len(len)
       self.d.unsub(onchange)
       self.d = data
-      define_prop(self, 'obv_len', define_getter(() => self.d.obv_len))
+      define_prop(self, 'obv_len', define_getter(() => () => self._obv_len || (self._obv_len = self.d.obv_len)))
       data.sub(onchange)
     }
 
