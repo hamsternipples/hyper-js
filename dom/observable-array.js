@@ -47,8 +47,7 @@ export default class ObservableArray extends Array {
   constructor (array) {
     super()
     var self = this
-    self.observable = 'array'
-    self.listeners = []
+    self._obv = 'array'
     mixin_pubsub(self)
     self._up()
     define_prop(self, 'obv_len', define_getter(() => self._obv_len || (self._obv_len = value(self.length))))

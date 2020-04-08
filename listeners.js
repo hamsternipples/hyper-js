@@ -67,4 +67,6 @@ export const mixin_pubsub = (obj) => {
   obj.unsub = (fn) => {
     remove(listeners, fn)
   }
+
+  if (DEBUG) obj.l = listeners
 }

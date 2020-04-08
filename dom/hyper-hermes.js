@@ -341,7 +341,7 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
   // append nodes to the fragment, with parent node as parent
   for (v of arr) frag.aC(make_child_node(parent, v, cleanupFuncs))
 
-  if (arr.observable === 'array') {
+  if (arr._obv === 'array') {
     // TODO: add a comment to know where the array begins and ends (a la angular)
     function onchange (ev) {
       // this should remain a 'var' -- otherwise terser will deoptimise it.
