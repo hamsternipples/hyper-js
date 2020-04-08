@@ -15,6 +15,7 @@ export const nav = win.navigator
 export const ua = nav.userAgent
 export const Array = win.Array
 export const Object = win.Object
+export const Error = win.Error
 
 export const is_array = Array.isArray
 export const new_array = Array
@@ -55,4 +56,11 @@ export const sqrt = Math.sqrt
 export const tan = Math.tan
 export const tanh = Math.tanh
 
+export const obj_is = Object.is
+export const obj_keys = Object.keys
+export const obj_values = Object.values
+export const obj_create = Object.create
+export const obj_assign = Object.assign
+
 export const noop = () => {}
+export const undefined = void 0

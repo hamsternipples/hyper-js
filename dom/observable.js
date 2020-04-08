@@ -2,9 +2,12 @@
 
 import { define_prop, define_props } from '@hyper/utils'
 import { define_value, define_getter } from '@hyper/utils'
-import { error, is_obv, is_fn, is_obv_type } from '@hyper/utils'
+import { error, is_str, is_obv, is_fn, not_fn, is_obv_type } from '@hyper/utils'
+import { is_truthy, is_falsy, is_void, is, isnt } from '@hyper/utils'
 import { emit, remove } from '@hyper/listeners'
-import { is_array, remove_every as compactor, new_array } from '@hyper/array'
+import { remove_every as compactor, new_array } from '@hyper/array'
+
+import { is_array, undefined } from '@hyper/global'
 
 export { is_obv, is_obv_type }
 
@@ -19,7 +22,7 @@ export { is_obv, is_obv_type }
 
 
 export const ensure_obv = (obv) => {
-  if (typeof obv !== 'function' || typeof obv._obv !== 'string')
+  if (not_fn(obv) || !is_str(obv._obv))
     error('expected an observable')
 }
 
@@ -43,20 +46,20 @@ if (DEBUG) var OBV_ID = 0
 export const value = (initial, _obv) => {
   const obv = (val, do_immediately) => {
     return (
-      val === undefined ? obv.v // getter
-    : typeof val !== 'function' ? ( // is a set
-      Object.is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
+      is_void(val) ? obv.v  // getter
+    : not_fn(val) ? (       // is a set
+      is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
         emit(obv.l,
           obv.v, // previous value
           obv.v = val  // new value
         ), val // return the value
       )
-    : ( // is a listener
+    : ( // is a listener function
         obv.l.push(val),
         (DEBUG && VALUE_LISTENERS++),
         (
-          // if the value is uninitialised, or do_immediately is falsy, don't call he listener back immediately with the value.
-          obv.v === undefined || (do_immediately != null && !do_immediately)
+          // if the value is uninitialised, or do_immediately is falsey, don't call he listener back immediately with the value.
+          is_void(obv.v) || is_falsy(do_immediately)
           ? obv.v
           : val(obv.v)
         ), () => { // listener
@@ -86,9 +89,9 @@ export const value = (initial, _obv) => {
 export const value2 = (initial) => {
   const obv = (val, do_immediately) => {
     return (
-      val === undefined ? (is_fn(obv.v) ? obv.v() : obv.v) // getter
-    : typeof val !== 'function' ? (
-      Object.is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
+      is_void(val) ? (is_fn(obv.v) ? obv.v() : obv.v) // getter
+    : not_fn(val) ? (
+      is(obv.v, val) ? undefined : // only set if obv.v === val (but use Object.is instead of ===, so it gets NaN and +0/-0)
         emit(obv.l,
           is_fn(obv.v) ? obv.v() : obv.v, // previous value
           is_fn(obv.v) ? val : obv.v = val  // new value
@@ -98,7 +101,7 @@ export const value2 = (initial) => {
         obv.l.push(val),
         (DEBUG && VALUE_LISTENERS++),
         (
-          obv.v === undefined || do_immediately === false
+          is_void(obv.v) || is_falsy(do_immediately)
           ? obv.v
           : val(obv.v)
         ), () => { // listener
@@ -146,7 +149,7 @@ export const obv_toggle_fn = (obv) => {
   return () => emit(obv.l, obv.v, obv.v = !obv.v)
 }
 export const obv_set_fn = (obv) => {
-  return (val) => emit(obv.l, obv.v, obv.v = val === undefined ? obv.v : val)
+  return (val) => emit(obv.l, obv.v, obv.v = is_void(val) ? obv.v : val)
 }
 export const obv_once_fn = (obv) => {
   return (fn, do_immediately, _stop_listening) => {
@@ -227,8 +230,8 @@ export const property = (model, key) => {
 
   function obv (val) {
     return (
-      val === undefined ? model.get(key)
-    : typeof val !== 'function' ? model.set(key, val)
+      is_void(val) ? model.get(key)
+    : not_fn(val) ? model.set(key, val)
     : (on(model, 'change:'+key, val), val(model.get(key)), () => {
         off(model, 'change:'+key, val)
       })
@@ -253,8 +256,8 @@ export const transform = (obv, down, up) => {
 
   function observable (arg, do_immediately) {
     return (
-      arg === undefined ? down(obv())
-    : typeof arg !== 'function' ? obv((up || down)(arg))
+      is_void(arg) ? down(obv())
+    : not_fn(arg) ? obv((up || down)(arg))
     : obv((cur, old) => { arg(down(cur, old)) }, do_immediately)
     )
   }
@@ -273,17 +276,17 @@ export const compute = (obvs, compute_fn) => {
   var obv = (arg, do_immediately) => {
     // this is probably the clearest code I've ever written... lol
     return (
-      arg === undefined ? (                 // 1. to arg: getter... eg. obv()
-        obv.v === undefined ? (
+      is_void(arg) ? (                // 1. no arg: getter... eg. obv()
+        is_void(obv.v) ? (
           obv.v = compute_fn.apply(null, obv_vals))
       : obv.v)
-    : typeof arg !== 'function' ? (         // 2. arg is a value: setter... eg. obv(1234)
-      obv.v === arg ? undefined             // same value? do nothing
+    : not_fn(arg) ? (                 // 2. arg is a value: setter... eg. obv(1234)
+      obv.v === arg ? undefined       // same value? do nothing
       : emit(obv.l, obv.v, obv.v = arg), arg) // emit changes to liseners
-    : (obv.l.push(arg),                 // arg is a function. add it to the listeners
-      (DEBUG && COMPUTE_LISTENERS++),       // dev code to help keep leaks from getting out of control
-      (do_immediately === false ? 0         // if do_immediately === false, do notihng
-        : arg(obv.v)),                      // otherwise call the listener with the current value
+    : (obv.l.push(arg),               // arg is a function. add it to the listeners
+      (DEBUG && COMPUTE_LISTENERS++), // dev code to help keep leaks from getting out of control
+      (is_falsy(do_immediately) ? 0   // if is_falsy(do_immediately), do notihng
+        : arg(obv.v)),                // otherwise call the listener with the current value
       () => { remove(obv.l, arg); DEBUG && COMPUTE_LISTENERS-- }) // unlisten function
     )
   }
@@ -299,12 +302,13 @@ export const compute = (obvs, compute_fn) => {
   // the `let` is important here. (var won't work)
   for (let i = 0; i < len; i++) {
     fn = obvs[i]
-    if (typeof fn === 'function') {
+    if (is_fn(fn)) {
       if (DEBUG) ensure_obv(fn)
       removables.push(fn((v, _prev) => {
         _prev = obv_vals[i]
         obv_vals[i] = v
-        if (!Object.is(_prev, v) && !is_init) obv(compute_fn.apply(null, obv_vals))
+        if (isnt(_prev, v) && !is_init)
+          obv(compute_fn.apply(null, obv_vals))
       }, is_init))
     } else {
       // items in the obv array can also be literals
@@ -325,7 +329,7 @@ export const calc = (obvs, compute_fn) => {
 
   // the `let` is important here, as it makes a scoped variable used inside the listener attached to the obv. (var won't work)
   for (let i = 0; i < len; i++) {
-    obv_vals[i] = typeof (fn = obvs[i]) === 'function' ? fn() : fn
+    obv_vals[i] = is_fn(fn = obvs[i]) ? fn() : fn
   }
 
   return compute_fn.apply(null, obv_vals)

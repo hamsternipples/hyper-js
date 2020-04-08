@@ -4,9 +4,9 @@
 import obj_like from './lodash/isObject'
 import { setTimeout, clearTimeout } from '@hyper/global'
 import { Array, is_array } from '@hyper/global'
-import { Object, noop } from '@hyper/global'
+import { Object, Error, noop, obj_is } from '@hyper/global'
 
-export { is_array, noop }
+export { is_array, noop, obj_is }
 
 // array stuff
 import {
@@ -91,6 +91,14 @@ export { not_void as not_undefined }
 
 export const is_nil = (v) => v == null
 export const not_nil = (v) => v != null
+
+export const is_truthy = (v) => v != null && v
+export const is_falsey = (v) => v != null && !v
+export { is_truthy as is_truthey, is_truthy as is_truthie }
+export { is_falsey as is_falsy, is_falsey as is_falsie }
+
+export const is = obj_is
+export const isnt = (a, b) => !obj_is(a, b)
 
 export const is_empty = (value) => (!value || not_obj(value))
   ? !value
