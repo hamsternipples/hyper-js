@@ -5,6 +5,7 @@
 // NULL_LISTENERS_RUN_COMPACTOR -- then the expensive compactor will run the compactor
 
 import { remove_every as compactor, next_tick, is_fn } from '@hyper/utils'
+import { define_prop, define_value } from '@hyper/utils'
 
 // trigger all listeners
 // old_val has to come first, to allow for things using it to do something like this:
@@ -68,5 +69,5 @@ export const mixin_pubsub = (obj) => {
     remove(listeners, fn)
   }
 
-  if (DEBUG) obj.l = listeners
+  if (DEBUG) define_prop(obj, 'l', define_value(listeners))
 }
