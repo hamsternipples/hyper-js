@@ -1,9 +1,10 @@
 'use strict'
 
-import { define_prop, define_props, define_value, define_getter } from '@hyper/utils'
-import { remove_every as compactor, error } from '@hyper/utils'
-import { is_array, is_obv, is_fn, is_obv_type } from '@hyper/utils'
+import { define_prop, define_props } from '@hyper/utils'
+import { define_value, define_getter } from '@hyper/utils'
+import { error, is_obv, is_fn, is_obv_type } from '@hyper/utils'
 import { emit, remove } from '@hyper/listeners'
+import { is_array, remove_every as compactor, new_array } from '@hyper/array'
 
 export { is_obv, is_obv_type }
 
@@ -39,22 +40,8 @@ export const bind2 = (l, r) => {
 // An observable that stores a value.
 if (DEBUG) var VALUE_LISTENERS = 0
 if (DEBUG) var OBV_ID = 0
-export const value = (initial) => {
-  // if the value is already an observable, then just return it
-  if (is_obv(initial)) {
-    return initial
-  } else {
-    obv.v = initial
-  }
-
-  obv.l = []
-  obv._obv = 'value'
-  if (DEBUG) obv._id = OBV_ID++
-  if (DEBUG) obv._type = 'value'
-  if (DEBUG) obv.gc = () => compactor(obv.l)
-  return obv
-
-  function obv (val, do_immediately) {
+export const value = (initial, _obv) => {
+  const obv = (val, do_immediately) => {
     return (
       val === undefined ? obv.v // getter
     : typeof val !== 'function' ? ( // is a set
@@ -79,10 +66,7 @@ export const value = (initial) => {
       )
     )
   }
-}
 
-// an observable that stores a value (same as value), but optionally, the value can be a getter function
-export const value2 = (initial) => {
   // if the value is already an observable, then just return it
   if (is_obv(initial)) {
     return initial
@@ -93,11 +77,14 @@ export const value2 = (initial) => {
   obv.l = []
   obv._obv = 'value'
   if (DEBUG) obv._id = OBV_ID++
-  if (DEBUG) obv._type = 'value2'
+  if (DEBUG) obv._type = 'value'
   if (DEBUG) obv.gc = () => compactor(obv.l)
   return obv
+}
 
-  function obv (val, do_immediately) {
+// an observable that stores a value (same as value), but optionally, the value can be a getter function
+export const value2 = (initial) => {
+  const obv = (val, do_immediately) => {
     return (
       val === undefined ? (is_fn(obv.v) ? obv.v() : obv.v) // getter
     : typeof val !== 'function' ? (
@@ -121,6 +108,20 @@ export const value2 = (initial) => {
       )
     )
   }
+
+  // if the value is already an observable, then just return it
+  if (is_obv(initial)) {
+    return initial
+  } else {
+    obv.v = initial
+  }
+
+  obv.l = []
+  obv._obv = 'value'
+  if (DEBUG) obv._id = OBV_ID++
+  if (DEBUG) obv._type = 'value2'
+  if (DEBUG) obv.gc = () => compactor(obv.l)
+  return obv
 }
 
 export const inc = (obv, n = 1) => obv(obv.v + n)
@@ -264,39 +265,12 @@ export const transform = (obv, down, up) => {
 // transform an array of obvs
 if (DEBUG) var COMPUTE_LISTENERS = 0
 export const compute = (obvs, compute_fn) => {
-  let is_init = 1, len = obvs.length
-  let obv_vals = new Array(len)
-  let listeners = [], removables = [], fn
+  var is_init = 1, len = obvs.length
+  var obv_vals = new_array(len)
+  // @Incomplete: move this to obv.l
+  var removables = [], fn
 
-  // the `let` is important here, as it makes a scoped variable used inside the listener attached to the obv. (var won't work)
-  for (let i = 0; i < len; i++) {
-    fn = obvs[i]
-    if (typeof fn === 'function') {
-      if (DEBUG) ensure_obv(fn)
-      removables.push(fn((v) => {
-        let prev = obv_vals[i]
-        obv_vals[i] = v
-        if (!Object.is(prev, v) && !is_init) obv(compute_fn.apply(null, obv_vals))
-      }, is_init))
-    } else {
-      // items in the obv array can also be literals
-      obv_vals[i] = fn
-    }
-  }
-
-  obv._obv = 'value'
-  if (DEBUG) obv._id = OBV_ID++
-  if (DEBUG) obv._type = 'compute'
-  if (DEBUG) obv.gc = () => compactor(listeners)
-  if (DEBUG) define_prop(obv, 'listeners', { get: obv.gc })
-  obv.x = () => { for (fn of removables) fn() }
-
-  obv.v = compute_fn.apply(null, obv_vals)
-  is_init = 0
-
-  return obv
-
-  function obv (arg, do_immediately) {
+  var obv = (arg, do_immediately) => {
     // this is probably the clearest code I've ever written... lol
     return (
       arg === undefined ? (                 // 1. to arg: getter... eg. obv()
@@ -305,19 +279,47 @@ export const compute = (obvs, compute_fn) => {
       : obv.v)
     : typeof arg !== 'function' ? (         // 2. arg is a value: setter... eg. obv(1234)
       obv.v === arg ? undefined             // same value? do nothing
-      : emit(listeners, obv.v, obv.v = arg), arg) // emit changes to liseners
-    : (listeners.push(arg),                 // arg is a function. add it to the listeners
+      : emit(obv.l, obv.v, obv.v = arg), arg) // emit changes to liseners
+    : (obv.l.push(arg),                 // arg is a function. add it to the listeners
       (DEBUG && COMPUTE_LISTENERS++),       // dev code to help keep leaks from getting out of control
       (do_immediately === false ? 0         // if do_immediately === false, do notihng
         : arg(obv.v)),                      // otherwise call the listener with the current value
-      () => { remove(listeners, arg); DEBUG && COMPUTE_LISTENERS-- }) // unlisten function
+      () => { remove(obv.l, arg); DEBUG && COMPUTE_LISTENERS-- }) // unlisten function
     )
   }
+
+  obv.l = []
+  obv._obv = 'value'
+  if (DEBUG) obv._id = OBV_ID++
+  if (DEBUG) obv._type = 'compute'
+  if (DEBUG) obv.gc = () => compactor(obv.l)
+  obv.x = () => { for (fn of removables) fn() }
+  obv.v = compute_fn.apply(null, obv_vals)
+  is_init = 0
+
+  // @Speed: check to see if there is an imporovement on memory/speed, changing this to `each((fn, i) => { ... }`. because of the length variable savings passing to new_array - the 'let ' cost, it still comes to almost the same byte size.. ±6bytes.
+  // the `let` is important here. (var won't work)
+  for (let i = 0; i < len; i++) {
+    fn = obvs[i]
+    if (typeof fn === 'function') {
+      if (DEBUG) ensure_obv(fn)
+      removables.push(fn((v, _prev) => {
+        _prev = obv_vals[i]
+        obv_vals[i] = v
+        if (!Object.is(_prev, v) && !is_init) obv(compute_fn.apply(null, obv_vals))
+      }, is_init))
+    } else {
+      // items in the obv array can also be literals
+      obv_vals[i] = fn
+    }
+  }
+
+  return obv
 }
 
 export const calc = (obvs, compute_fn) => {
   let len = obvs.length, fn
-  let obv_vals = new Array(len)
+  let obv_vals = new_array(len)
 
   // the `let` is important here, as it makes a scoped variable used inside the listener attached to the obv. (var won't work)
   for (let i = 0; i < len; i++) {
@@ -346,6 +348,3 @@ export const PRINT_COUNTS = () => {
   console.log(counts)
   return counts
 }
-
-
-// older stuff

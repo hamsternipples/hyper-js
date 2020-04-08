@@ -1,6 +1,7 @@
 
-import { empty_array, extend, swap, is_fn } from '@hyper/utils'
+import { extend, swap, is_fn } from '@hyper/utils'
 import { define_prop, define_getter, error } from '@hyper/utils'
+import { empty_array, new_array } from '@hyper/array'
 import { is_obv, value } from '@hyper/dom/observable'
 import { make_child_node } from '@hyper/dom/hyper-hermes'
 import { comment } from '@hyper/dom-base'
@@ -93,7 +94,7 @@ export default class RenderingArray extends ObservableArray {
         case 'unshift':
           i = 0
           // make space in storage arrays by splicing in undefined values (to be filled in by fn_call)
-          v = new Array(e.values.length)
+          v = new_array(e.values.length)
           if (fl >= 1) self._d.splice(0, 0, ...v)
           // if (fl >= 2) self._ctx.splice(0, 0, ...v)
           if (fl >= 3) self._idx.splice(0, 0, ...v)
@@ -119,7 +120,7 @@ export default class RenderingArray extends ObservableArray {
           if ((i = e.idx) < 0) i += len // -idx
           j = e.remove
           // make space in storage arrays by splicing in undefined values (to be filled in by fn_call)
-          v = new Array(k = e.add.length)
+          v = new_array(k = e.add.length)
           if (fl >= 1) self._d.splice(i, j, ...v)
           // if (fl >= 2) t = self._ctx.splice(i, j, ...v)
           if (fl >= 3) self._idx.splice(i, j, ...v)

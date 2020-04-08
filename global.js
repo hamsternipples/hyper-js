@@ -17,6 +17,42 @@ export const Array = win.Array
 export const Object = win.Object
 
 export const is_array = Array.isArray
+export const new_array = Array
+export const slice = [].slice
 
+export const abs = Math.abs
+export const acos = Math.acos
+export const acosh = Math.acosh
+export const asin = Math.asin
+export const asinh = Math.asinh
+export const atan = Math.atan
+export const atanh = Math.atanh
+export const atan2 = Math.atan2
+export const cbrt = Math.cbrt
+export const ceil = Math.ceil
+export const clz32 = Math.clz32
+export const cos = Math.cos
+export const cosh = Math.cosh
+export const exp = Math.exp
+export const expm1 = Math.expm1
+export const floor = Math.floor
+export const fround = Math.fround
+export const hypot = Math.hypot
+export const imul = Math.imul
+export const log = Math.log
+export const log1p = Math.log1p
+export const log10 = Math.log10
+export const log2 = Math.log2
+export const max = Math.max
+export const min = Math.min
+export const pow = Math.pow
+export const random = Math.random
+export const round = Math.round
+export const sign = Math.sign
+export const sin = Math.sin
+export const sinh = Math.sinh
+export const sqrt = Math.sqrt
+export const tan = Math.tan
+export const tanh = Math.tanh
 
 export const noop = () => {}

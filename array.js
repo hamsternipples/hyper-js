@@ -1,7 +1,7 @@
 
+import { new_array, is_array, slice } from '@hyper/global'
+export { new_array, is_array, slice }
 
-
-export const slice = [].slice
 
 // micro-optimization: http://jsperf.com/for-vs-foreach/292
 export const each = (arr, fn, _this = arr, i) => {
@@ -35,15 +35,17 @@ export const concat = (arr1, arr2) => {
   return res
 }
 
-export const empty_array = (n = 0, init_value = 0) => {
-  var array = Array(n)
-  while (n-- > 0) array[n] = typeof init_value === 'function' ? init_value(n) : init_value
-  return array
+export const empty_array = (n = 0, init_value = 0, _arr) => {
+  _arr = new_array(n)
+  while (n-- > 0) _arr[n] = typeof init_value === 'function' ? init_value(n) : init_value
+  return _arr
 }
 
 export const array_idx = (len, idx) => idx < 0 ? len + idx : idx
 
-// same as lodash.compact, but does the compaction inline on the same array by resizing it
+// similar to lodash.compact.
+// however, it does the compaction inline on the same array by resizing it.
+// also only removes null/undefined values, instead of all falsey values.
 export const compact = (array) => {
   var i = -1
   var len = array.length
@@ -51,7 +53,7 @@ export const compact = (array) => {
   var value
   while (++i < len) {
     value = array[i]
-    if (value) {
+    if (value != null) {
       if (i !== ++idx) array[idx] = value
     }
   }

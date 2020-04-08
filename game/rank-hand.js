@@ -1,3 +1,5 @@
+import { new_array } from '@hyper/array'
+
 function rankKickers (noOfCards, ranks) {
   var kickerRank = 0
   var myRanks = []
@@ -39,9 +41,9 @@ export const rankHandInt = (_cards) => {
   var rank = 0
   var message = ''
 
-  var l = _cards.length
-  var handRanks = new Array(l)
-  var handSuits = new Array(l)
+  var len = _cards.length
+  var handRanks = new_array(len)
+  var handSuits = new_array(len)
   for (var i = 0; i < l; i++) {
     handRanks[i] = _cards[i][0]
     handSuits[i] = _cards[i][1]
