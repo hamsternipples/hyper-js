@@ -127,10 +127,10 @@ export const value2 = (initial) => {
   return obv
 }
 
-export const inc = (obv, n = 1) => obv(obv.v + n)
-export const dec = (obv, n = 1) => obv(obv.v - n)
-export const mul = (obv, n = 2) => obv(obv.v * n)
-export const div = (obv, n = 2) => obv(obv.v / n)
+export const inc = (obv, n = 1) => obv((obv.v || 0) + n)
+export const dec = (obv, n = 1) => obv((obv.v || 0) - n)
+export const mul = (obv, n = 2) => obv((obv.v || 0) * n)
+export const div = (obv, n = 2) => obv((obv.v || 0) / n)
 export const toggle = (obv) => obv(!obv.v)
 
 export const obv_inc_fn = (obv) => {
