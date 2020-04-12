@@ -135,7 +135,8 @@ export default class RenderingArray extends ObservableArray {
           if (fl >= 3) for (k = i; k < len; k++) self._idx[k](k)
           super.splice(i, j, ...t)
           if (min) {
-            i = min - len
+            i = min - (self.length - len)
+            // @Bug: this should splice off the empty ones at the end. I doubt it works properly
             if (i < 0) super.splice(i, -i)
             if (i > 0) super.push(...empty_array(i, (idx) => {
               return self.empty_fn(self.G, idx)

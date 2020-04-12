@@ -1,5 +1,6 @@
 import { value } from '@hyper/dom/observable'
 import { empty_array, is_array } from '@hyper/utils'
+import { is_fn, not_num } from '@hyper/utils'
 import { define_prop, define_getter } from '@hyper/utils'
 import { extend, swap, error } from '@hyper/utils'
 import isEqual from '@hyper/isEqual'
@@ -146,11 +147,16 @@ export default class ObservableArray extends Array {
   }
 
   remove (idx) {
-    if (typeof idx !== 'number') {
-      var iidx = this.indexOf(idx)
-      if (~iidx) idx = iidx
-      else return this
+    var iidx = idx
+    if (is_fn(idx)) {
+      iidx = this.findIndex(idx)
+    } else if (not_num(idx)) {
+      iidx = this.indexOf(idx)
     }
+
+    if (~iidx) idx = iidx
+    else return this
+
     this.pub({ type: 'remove', idx })
     super.splice(idx, 1)
     this._up()
