@@ -28,10 +28,10 @@ export const time_units = (() => {
 
 export const dt2unit = (dt) => {
   dt = Math.abs(dt)
-  var u, v, i = 0
+  var s, u, v, i = 0
   for (; i < time_units.length; i++) {
-    u = time_units[i]
-    if ((v = Math.floor(dt / u[1])) > 0) return [u[0], v]
+    [s, u] = time_units[i]
+    if ((v = Math.floor(dt / u)) > 0) return [s, v]
   }
 }
 
