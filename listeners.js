@@ -26,9 +26,9 @@ export const emit = (listeners, old_val, val) => {
 // trigger all listeners
 // doesn't have old_val
 export const trigger = (listeners, val) => {
-  var fn, c = 0, i = 0, len = listeners.length
+  var fn, c = 0, i, len = listeners.length
   if (len > 0) {
-    for (; i < len; i++) {
+    for (i = len - 1; i >= 0; i--) {
       if (is_fn(fn = listeners[i])) fn(val)
       else c++
     }
