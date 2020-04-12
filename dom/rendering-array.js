@@ -2,7 +2,7 @@
 import { extend, swap, is_fn } from '@hyper/utils'
 import { define_prop, define_getter, error } from '@hyper/utils'
 import { empty_array, new_array } from '@hyper/array'
-import { is_obv, value } from '@hyper/dom/observable'
+import { is_obv, value, set } from '@hyper/dom/observable'
 import { make_child_node } from '@hyper/dom/hyper-hermes'
 import { comment } from '@hyper/dom-base'
 import ObservableArray from '@hyper/dom/observable-array'
@@ -91,8 +91,8 @@ export default class RenderingArray extends ObservableArray {
         case 'set':
           if ((i = e.idx) < 0) i += len // -idx
           v = e.val
-          super[i] = v
-          if (fl >= 1) self._d[i].set(v)
+          if (fl >= 1) self.plain ? self._d[i] = v : set(self._d[i], v)
+          super.set(i, self.fn_call(v, i))
           break
         case 'unshift':
           i = 0
