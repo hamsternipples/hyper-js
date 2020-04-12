@@ -4,6 +4,8 @@ import { RELATIVE_UNITS as DEFAULT_FORMAT } from '@hyper/lingua/dates'
 
 // @Bug: it can produce the text, "one day, a day ago" if it's 1 day, ~23 hours ago
 
+// @Incomplete: add a function which will update the dates every x seconds. it shuld store an array of the times, and only update the ones that have noticeable impact. eg. the size of the unit (minutes, updates once a minute, etc.)
+
 // @Incomplete: - merge the locale with 'date-format' so they share
 // see moment and also: https://github.com/betsol/time-delta/blob/master/lib/time-delta.js
 
@@ -66,6 +68,8 @@ const threshold_M  = 11         // months to year
 // without_suffix: omit the suffix '__ ago' or prefix 'in __'
 // locale: defaults to 'en'
 export const dt2human = (dt, num_units, join, without_suffix, locale = DEFAULT_FORMAT) => {
+  if (Math.abs(dt) < 1000) return locale.now // just now
+
   var units = dt2units(dt, num_units)
   var arr = units.map(([k, v]) =>
     sprintf(locale[
@@ -94,16 +98,16 @@ export const dt2relative = (dt, without_suffix, locale = DEFAULT_FORMAT) => {
   // and, threshholds is handled incorrectly (cause of the non-fallthrough behaviour I want to have)
   var str = sprintf(locale[
          k == 'seconds' && (v <= threshold_ss ? 's'
-      : (v < threshold_s ? 'ss'               : 'm')
-    ) || k == 'minutes' && (v <= 1             ? 'm'
-      : (v < threshold_h ? 'mm'               : 'h')
-    ) || k == 'hours'   && (v <= 1             ? 'h'
-      : (v < threshold_d ? 'hh'               : 'd')
-    ) || k == 'days'    && (v <= 1             ? 'd'
-      : (v < threshold_m ? 'dd'               : 'm')
-    ) || k == 'months'  && (v <= 1             ? 'M'
-      : (v < threshold_y ? 'MM'               : 'y')
-    ) || k == 'years'   && (v <= 1             ? 'y'
+      : (v < threshold_s ?                  'ss' : 'm')
+    ) || k == 'minutes' && (v <= 1            ? 'm'
+      : (v < threshold_h ?                  'mm' : 'h')
+    ) || k == 'hours'   && (v <= 1            ? 'h'
+      : (v < threshold_d ?                  'hh' : 'd')
+    ) || k == 'days'    && (v <= 1            ? 'd'
+      : (v < threshold_m ?                  'dd' : 'm')
+    ) || k == 'months'  && (v <= 1            ? 'M'
+      : (v < threshold_y ?                  'MM' : 'y')
+    ) || k == 'years'   && (v <= 1            ? 'y'
       : 'yy'
     )
   ], v, locale)
@@ -112,29 +116,12 @@ export const dt2relative = (dt, without_suffix, locale = DEFAULT_FORMAT) => {
     : sprintf(locale[+dt > 0 ? 'future' : 'past'], str)
 }
 
-// there may be problems with this method. here's an example of processing relative time in another language:
-// function processRelativeTime(number, withoutSuffix, key, isFuture) {
-//   var format = {
-//     's': ['a few seconds', 'a few seconds ago'],
-//     'ss': [number + ' seconds', number + ' seconds ago'],
-//     'm': ['eka mintan', 'ek minute'],
-//     'mm': [number + ' mintanim', number + ' mintam'],
-//     'h': ['eka horan', 'ek hor'],
-//     'hh': [number + ' horanim', number + ' hor'],
-//     'd': ['eka disan', 'ek dis'],
-//     'dd': [number + ' disanim', number + ' dis'],
-//     'M': ['eka mhoinean', 'ek mhoino'],
-//     'MM': [number + ' mhoineanim', number + ' mhoine'],
-//     'y': ['eka vorsan', 'ek voros'],
-//     'yy': [number + ' vorsanim', number + ' vorsam']
-//   }
-//
-//   return withoutSuffix ? format[key][0] : format[key][1]
-// }
 
 if (UNITTEST) {
   assert.equal(dt2human(-1000 * 60 * 60 * 24, 2, ', '), 'a day ago')
   assert.equal(dt2human(-1000 * 60 * 60 * 47, 2, ', '), 'a day, 23 hours ago')
   assert.equal(dt2human(-1000 * 60 * 60 * 47.95, 2, ', '), 'a day, 23 hours ago')
   assert.equal(dt2human(-1000 * 60 * 60 * 48, 2, ', '), '2 days ago')
+  assert.equal(dt2human(-1000, 2, ', '), 'a few seconds ago')
+  assert.equal(dt2human(0, 2, ', '), 'just now')
 }

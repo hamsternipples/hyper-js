@@ -11,6 +11,7 @@ export const MONTH_NAMES_SHORT = MONTH_NAMES.map(s => s.substr(0, 3))
 export const RELATIVE_UNITS = {
   future : 'in %s',
   past : '%s ago',
+  now : 'just now',
   s : 'a few seconds',
   ss : '%d seconds',
   m : 'a minute',
