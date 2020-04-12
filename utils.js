@@ -4,9 +4,10 @@
 import obj_like from './lodash/isObject'
 import { setTimeout, clearTimeout } from '@hyper/global'
 import { Array, is_array } from '@hyper/global'
-import { Object, Error, noop, obj_is } from '@hyper/global'
+import { Error, noop } from '@hyper/global'
+import { Object, obj_is, obj_keys } from '@hyper/global'
 
-export { is_array, noop, obj_is }
+export { is_array, noop, obj_is, obj_keys }
 
 // array stuff
 import {
