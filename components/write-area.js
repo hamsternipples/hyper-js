@@ -1,7 +1,7 @@
 // @Temporary: move this out to @hyper/components/expanding-text
 
 import nl_elastic from '@hyper/decorators/nlElastic'
-import { is_str, is_obj, after, next_tick, error } from '@hyper/utils'
+import { is_str, is_fn, is_obj, after, next_tick, error } from '@hyper/utils'
 import { prevent_default } from '@hyper/dom-base'
 import { bind2 } from '@hyper/dom/observable'
 
@@ -11,7 +11,9 @@ import './write-area.less'
   // var { h, v, t, c, z, L } = G
 const write_area = ({h, v, t, c, z, L, $L}, lang) => (opts, cb) => {
   $L(lang) // init the language
+  if (is_fn(opts)) cb = opts, opts = {}
   if (DEBUG && !is_obj(opts)) error('invalid options')
+
   // L
   // 1. if it receives an object, that is its primary language translation
   // 2. if it gets text, it first grabs the translation (if any) out of its primary dictionary
