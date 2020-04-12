@@ -7,6 +7,18 @@ import isEqual from '@hyper/isEqual'
 
 import { mixin_pubsub } from '@hyper/listeners'
 
+const get_idx = (arr, idx) => {
+  var iidx = idx
+  if (is_fn(idx)) {
+    iidx = arr.findIndex(idx)
+  } else if (not_num(idx)) {
+    iidx = arr.indexOf(idx)
+  }
+
+  if (~iidx) return iidx
+  else return null
+}
+
 /*
 emitter of events:
 * type -> event type
@@ -134,56 +146,61 @@ export default class ObservableArray extends Array {
   }
 
   replace (idx, val) {
-    this.pub({ type: 'replace', val, idx, old: this[idx] })
-    super.splice(idx, 1, val)
-    return this
+    var self = this
+    if (~(idx = get_idx(self, idx))) {
+      self.pub({ type: 'replace', val, idx, old: self[idx] })
+      super.splice(idx, 1, val)
+    }
+    return self
   }
 
   move (from_idx, to_idx) {
-    this.pub({ type: 'move', from: from_idx, to: to_idx })
-    var el = super.splice(from_idx, 1)
-    super.splice(to_idx, 0, el[0])
-    return this
+    var self = this
+    if (~(from_idx = get_idx(self, from_idx)) &&
+      ~(to_idx = get_idx(self, to_idx))) {
+      self.pub({ type: 'move', from: from_idx, to: to_idx })
+      var el = super.splice(from_idx, 1)
+      super.splice(to_idx, 0, el[0])
+    }
+    return self
   }
 
   remove (idx) {
-    var iidx = idx
-    if (is_fn(idx)) {
-      iidx = this.findIndex(idx)
-    } else if (not_num(idx)) {
-      iidx = this.indexOf(idx)
+    var self = this
+    if (~(idx = get_idx(self, idx))) {
+      self.pub({ type: 'remove', idx })
+      super.splice(idx, 1)
+      self._up()
     }
 
-    if (~iidx) idx = iidx
-    else return this
-
-    this.pub({ type: 'remove', idx })
-    super.splice(idx, 1)
-    this._up()
-    return this
+    return self
   }
 
   splice (idx, remove, ...add) {
-    if (idx === undefined || (remove !== undefined && (+idx >= this.length || +remove < 0))) return []
-    this.pub({ type: 'splice', idx, remove, add })
+    var self = this
+    if (!~(idx = get_idx(self, idx)) || (remove !== undefined && (+idx >= self.length || +remove < 0))) return []
+    self.pub({ type: 'splice', idx, remove, add })
     var ret = super.splice(idx, remove, ...add)
-    this._up()
+    self._up()
     return ret
   }
 
   unshift (...items) {
-    if (!items.length) return this.length
-    this.pub({ type: 'unshift', values: items })
+    var self = this
+    if (!items.length) return self.length
+    self.pub({ type: 'unshift', values: items })
     var ret = super.unshift(...items)
-    this._up()
+    self._up()
     return ret
   }
 
   set (idx, val) {
-    if (idx < 0) idx += this.length
-    if (isEqual(this[idx], val)) return
-    this.pub({ type: 'set', idx, val })
-    this[idx] = val
+    var self = this
+    if (~(idx = get_idx(self, idx))) {
+      if (idx < 0) idx += this.length
+      this.pub({ type: 'set', idx, val })
+      this[idx] = val
+    }
     return this
   }
 
