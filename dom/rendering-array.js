@@ -12,13 +12,13 @@ import ObservableArray from '@hyper/dom/observable-array'
 // fn: function receiving 1-3 arguments: (d, ctx, idx) for each item in the array
 // opts:
 //   plain: true/false - the data passed for each value in the array is a plain object or value/obv_object
-//   min: [number] - render at least n items always. for items that are empty, call opts.empty_fn instead
-//   empty_fn: [function] - @Incomplete: should receive (idx).
+//   min: [number] - render at least n items always. for items that are empty, call opts.empty instead
+//   empty: [function] - calls this function for to return an empty element. eg. `empty: (idx) => h('.no-element', 'empty element idx: '+idx)`
 export default class RenderingArray extends ObservableArray {
   constructor (G, data, fn, opts = {}) {
     super()
     opts = extend({ plain: true }, opts)
-    let k, fl, self = this
+    var k, fl, self = this
     self.fn = is_fn(data) ? (fn = data) : fn
     fl = self.fl = fn.length
     self.G = G
@@ -39,17 +39,18 @@ export default class RenderingArray extends ObservableArray {
     // if data has length, then render and add each of them
     self.data(data)
 
-    // finally, if min is an obv, it'll want to ensure any missing empty ones are rendered
-    if (k = opts.min) {
-      self.empty_fn = is_fn(opts.empty_fn) ? opts.empty_fn : () => 'empty'
-      if (is_obv(k)) k((new_min) => {
-        let real_len = self.length
-        let empty_els = real_len - self._d.length
-        let to_add = new_min - empty_els
+    // finally, if min is an obv or number, we want to ensure any missing empty ones are rendered
+    if ((k = opts.empty) && (fl = opts.min || 1)) {
+      self.empty_fn = k
+      var set_min = (new_min) => {
+        var real_len = self.length
+        var to_add = Math.max(real_len, new_min) - self._d.length
         if (to_add < 0) super.splice(real_len + to_add, -to_add) // chop everything off the end
-        if (to_add > 0) for (; to_add > 0; to_add--) super.push(self.empty_fn(real_len++))
+        if (to_add > 0) for (; to_add > 0; to_add--) super.push(self.empty_fn(G, real_len++))
         self.min = new_min
-      })
+      }
+      if (is_obv(fl)) fl(set_min)
+      else set_min(fl)
     }
   }
 
@@ -136,7 +137,9 @@ export default class RenderingArray extends ObservableArray {
           if (min) {
             i = min - len
             if (i < 0) super.splice(i, -i)
-            if (i > 0) super.push(...empty_array(i, self.empty_fn))
+            if (i > 0) super.push(...empty_array(i, (idx) => {
+              return self.empty_fn(self.G, idx)
+            }))
           }
           break
         case 'remove':
@@ -145,7 +148,7 @@ export default class RenderingArray extends ObservableArray {
           // if (fl >= 2) self._ctx.splice(i, 1)[0].cleanup()
           if (fl >= 3) self._idx.splice(i, 1)
           super.splice(i, 1)
-          if (min >= len) super.push(self.empty_fn())
+          if (min >= len) super.push(self.empty_fn(self.G, len - 1))
           if (fl >= 3) for (len--; i < len; i++) self._idx[i](i)
           break
         case 'replace':
@@ -181,7 +184,9 @@ export default class RenderingArray extends ObservableArray {
           if (fl >= 1) self._d.length = 0
           // if (fl >= 2) { for (v of self._ctx) { v.cleanup() } self._ctx.length = 0 }
           if (fl >= 3) self._idx.length = 0
-          if (min) super.push(...empty_array(min, self.empty_fn))
+          if (min) super.push(...empty_array(min, (idx) => {
+            return self.empty_fn(self.G, idx)
+          }))
           break
         // no args
         case 'reverse':
@@ -198,7 +203,7 @@ export default class RenderingArray extends ObservableArray {
           // if ((v = self._ctx[type]()) && len) v.cleanup()
           self._idx[type]()
           super[type]()
-          if (min && len && min > len) super.push(self.empty_fn())
+          if (min && len && min > len) super.push(self.empty_fn(self.G, len - 1))
           break
       }
     }
@@ -213,7 +218,7 @@ export default class RenderingArray extends ObservableArray {
 
       if (len || min) {
         for (; i < len; i++) _d.push(self.fn_call(data[i], i))
-        if (min > len) for (; i < min; i++) _d.push(self.empty_fn(i))
+        if (min > len) for (; i < min; i++) _d.push(self.empty_fn(self.G, i))
         super.push(..._d)
       }
 
