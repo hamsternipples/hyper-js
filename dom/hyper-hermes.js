@@ -583,6 +583,9 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
 }
 
 // inlined @hyper/dom/style (cause rollup can't figure out how to concat js files)
+// @Improve: using a rollup plugin, make this syntax possible:
+// > $$INLINE_MODULE$$('@hyper/dom/style')
+// (and split more parts of this monster file into smaller more manageable bits)
 
 import { camelize, float } from '@hyper/utils'
 import { value2 } from '@hyper/dom/observable'
@@ -605,7 +608,14 @@ export const set_style = (e, style, cleanupFuncs) => {
           k === 'gridColumnStart'
         )) error(`this will automatically become '${k}': ${v}px. coerce it to a string like this '${k}': ${v}+''`)
 
-        e.style[k] = is_num(v) && v > 1 ? v + 'px' : v
+        // numbers greater-than 1, or less-than -1 are treated as px
+        // numbers from 0 - -1 are treated as percents, eg. -.6 = 60%
+        // numbers from 0 - 1 are left as-is
+        e.style[k] = is_num(v) && (v > 1 || v < -1)
+          ? v + 'px'
+          : v < 1
+            ? `${-v * 100}%`
+            : v
       }
       var getter = (v) => {
         v = e.style[camelize(k)]
