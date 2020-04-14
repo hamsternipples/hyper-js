@@ -118,9 +118,9 @@ export const dt2relative = (dt, without_suffix, locale = DEFAULT_FORMAT) => {
 
 
 if (UNITTEST) {
-  assert.equal(dt2human(-1000 * 60 * 60 * 24, 2, ', '), 'a day ago')
-  assert.equal(dt2human(-1000 * 60 * 60 * 47, 2, ', '), 'a day, 23 hours ago')
-  assert.equal(dt2human(-1000 * 60 * 60 * 47.95, 2, ', '), 'a day, 23 hours ago')
+  assert.equal(dt2human(-1000 * 60 * 60 * 24, 2, ', '), 'one day ago')
+  assert.equal(dt2human(-1000 * 60 * 60 * 47, 2, ', '), 'one day, 23 hours ago')
+  assert.equal(dt2human(-1000 * 60 * 60 * 47.95, 2, ', '), 'one day, 23 hours ago')
   assert.equal(dt2human(-1000 * 60 * 60 * 48, 2, ', '), '2 days ago')
   assert.equal(dt2human(-1000, 2, ', '), 'a few seconds ago')
   assert.equal(dt2human(0, 2, ', '), 'just now')
