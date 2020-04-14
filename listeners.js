@@ -59,9 +59,9 @@ export const mixin_pubsub = (obj) => {
   }
 
   obj.next = (fn, after = 1, _fn2) => {
-    listeners.push(_fn2 = _fn2 = (ev) => {
+    listeners.push(_fn2 = (ev) => {
       fn(ev)
-      if (!--after) remove(listeners, fn2)
+      if (!--after) remove(listeners, _fn2)
     })
   }
 
