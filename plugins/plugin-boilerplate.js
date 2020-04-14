@@ -1,5 +1,6 @@
 import { mergeDeep, objJSON, extend, next_tick } from '@hyper/utils'
 import { define_prop, error } from '@hyper/utils' // @Temporary: for deprecations
+import { is_fn, is_str, is_obj } from '@hyper/utils'
 import { random_id } from '@hyper/random'
 
 import { value } from '@hyper/dom/observable'
@@ -13,12 +14,14 @@ import { dom_loaded, isNode, getElementById } from '@hyper/dom-base'
 import { new_ctx, el_ctx, global_ctx } from '@hyper/dom/hyper-ctx'
 import { raf } from '@hyper/global'
 
+
+
 function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _onload, _afterload) {
-  let tmp, mutationObserver, id, G, ctx, E, width, height, _dpr, args
-  let C = mergeDeep({}, objJSON(_config), DEFAULT_CONFIG)
+  var tmp, mutationObserver, id, G, ctx, E, width, height, _dpr, args
+  var C = mergeDeep({}, objJSON(_config), DEFAULT_CONFIG)
 
   // if a string is provided for the frame, try and find the frame by id, else make a fixud position full-size frame
-  id = typeof frame === 'string'
+  id = is_str(frame)
     ? ((tmp = getElementById(frame)) && tmp.id) || frame
     : random_id()
 
@@ -36,7 +39,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   }
 
   // this allows for custom listeners and/or styles to be added to the generated parentNode
-  if (typeof parentNode === 'object' && !isNode(parentNode)) tmp = mergeDeep(tmp, parentNode)
+  if (is_obj(parentNode) && !isNode(parentNode)) tmp = mergeDeep(tmp, parentNode)
 
   G = global_ctx()
   // frame = isNode(frame) ? frame : h('div#'+id, tmp)
@@ -44,7 +47,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
     ctx = _ctx.top = _ctx // save the plugin frame's context
 
     // don't need to use the new_ctx's h to make the element, cause it doesn't have any properties that need to be cleaned up.. slightly hacky.
-    return isNode(frame) ? frame : h('div#'+id, tmp)
+    return isNode(frame) ? frame : G.h('div#'+id, tmp)
   })
 
   if (!isNode(parentNode)) parentNode = body
@@ -69,6 +72,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   // TODO: add device motion events
   // https://developers.google.com/web/fundamentals/native-hardware/device-orientation/
 
+  // width, height & resize put on the frame ctx, because the frame can be smaller than the global context's width/height
   ctx.o.width = value(width = frame.clientWidth || C.width || 300)
   ctx.o.height = value(height = frame.clientHeight || C.height || 300)
   ctx.o.resize = obj_value({width, height})
@@ -84,7 +88,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
       // mutationObserver.disconnect()
       // mutationObserver = null
       if (parentNode) parentNode.removeChild(frame)
-      if (typeof _cleanup === 'function') _cleanup()
+      if (is_fn(_cleanup)) _cleanup()
     }
   })(frame.cleanup)
 
@@ -124,33 +128,25 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
 
   ;(function (onload) {
     function loader () {
-      let e, i = 0, resize
-      let once_loaded = (e) => {
+      var e, i = 0, resize
+      var once_loaded = (e) => {
         frame.aC(e)
-        if (typeof _afterload === 'function') _afterload(frame, e)
+        if (is_fn(_afterload)) _afterload(frame, e)
       }
-      // remove everything inside of the frame
-      frame.empty()
-      // while (e = frame.firstChild)
-      //   frame.removeChild(e)
 
-      // set the data (not really sure why it's done before comments are removed from the body)
-      // if (_data) set_data(_data)
+      frame.empty()
 
       // remove all html comments from the body (I rememeber they caused problems, but I don't remember exatly what..)
+      // @Cleanup: is this necessary?
       while (e = body.childNodes[i])
         if (e.nodeName[0] === '#') body.rm(e)
         else i++
 
-      if (typeof onload === 'function') {
+      if (is_fn(onload)) {
         if (e = new_ctx(ctx, onload)) {
           if (e.then) e.then(once_loaded)
           else once_loaded(e)
         }
-        // if (e = onload(G)) {
-        //   if (e.then) e.then(once_loaded)
-        //   else once_loaded(e)
-        // }
       }
 
       raf(() => {
@@ -158,9 +154,9 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
           width = frame.clientWidth
           height = frame.clientHeight
           raf(() => {
-            G.o.width(width)
-            G.o.height(height)
-            G.o.resize({width, height})
+            ctx.o.width(width)
+            ctx.o.height(height)
+            ctx.o.resize({width, height})
           })
         })
 
