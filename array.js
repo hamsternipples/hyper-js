@@ -79,8 +79,8 @@ export const remove_every = (array, value = null) => {
 
 // lightweight version of flatten which only flattens 1 level deep.
 export const flatten = (array) => {
-  let res = []
-  for (let v of array) is_array(v) ? res.push(...v) : res.push(v)
+  var v, res = []
+  for (v of array) is_array(v) ? res.push(...v) : res.push(v)
   return res
 }
 
@@ -89,6 +89,10 @@ export const ensure_array = (value) => {
 }
 
 // unique array values using Set.
-export const uniq = (array) => {
-  return Array.from(new Set(array).values())
+export const unique = (array) => {
+  return array.length >= 200
+    ? Array.from(new Set(array).values())
+    : array.filter((item, pos, self) => (self.indexOf(item) === pos))
 }
+
+export { unique as uniq }

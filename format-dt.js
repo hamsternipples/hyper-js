@@ -2,8 +2,6 @@ import { is_fn } from '@hyper/utils'
 import { sprintf } from '@hyper/format'
 import { RELATIVE_UNITS as DEFAULT_FORMAT } from '@hyper/lingua/dates'
 
-// @Bug: it can produce the text, "one day, a day ago" if it's 1 day, ~23 hours ago
-
 // @Incomplete: add a function which will update the dates every x seconds. it shuld store an array of the times, and only update the ones that have noticeable impact. eg. the size of the unit (minutes, updates once a minute, etc.)
 
 // @Incomplete: - merge the locale with 'date-format' so they share
@@ -118,10 +116,12 @@ export const dt2relative = (dt, without_suffix, locale = DEFAULT_FORMAT) => {
 
 
 if (UNITTEST) {
-  assert.equal(dt2human(-1000 * 60 * 60 * 24, 2, ', '), 'one day ago')
-  assert.equal(dt2human(-1000 * 60 * 60 * 47, 2, ', '), 'one day, 23 hours ago')
-  assert.equal(dt2human(-1000 * 60 * 60 * 47.95, 2, ', '), 'one day, 23 hours ago')
-  assert.equal(dt2human(-1000 * 60 * 60 * 48, 2, ', '), '2 days ago')
+  var hour = 1000 * 60 * 60 * 1
+
+  assert.equal(dt2human(-hour * 24, 2, ', '), 'one day ago')
+  assert.equal(dt2human(-hour * 47, 2, ', '), 'one day, 23 hours ago')
+  assert.equal(dt2human(-hour * 47.95, 2, ', '), 'one day, 23 hours ago')
+  assert.equal(dt2human(-hour * 48, 2, ', '), '2 days ago')
   assert.equal(dt2human(-1000, 2, ', '), 'a few seconds ago')
   assert.equal(dt2human(0, 2, ', '), 'just now')
 }

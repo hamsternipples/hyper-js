@@ -1,5 +1,5 @@
-import { parseJSON, assign, isEmpty, pick, uniq } from './utils'
-import { pathVars, pathToRegExp, pathToStrictRegExp, parseQS, parseHash } from './router-utils'
+import { parseJSON, assign, isEmpty, pick, uniq } from '@hyper/utils'
+import { pathVars, pathToRegExp, pathToStrictRegExp, parseQS, parseHash } from '@hyper/router-utils'
 
 export default class Route {
   constructor (pattern, Handler, data, observe, router) {
