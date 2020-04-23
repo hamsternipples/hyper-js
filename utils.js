@@ -7,11 +7,11 @@ import { Array, is_array } from '@hyper/global'
 import { Error, noop } from '@hyper/global'
 import { Object, obj_is, obj_keys } from '@hyper/global'
 
-export { is_array, noop, obj_is, obj_keys }
+// export { is_array, noop, obj_is, obj_keys }
+export * from '@hyper/global'
 
 // array stuff
 import {
-  slice,
   each,
   each_reverse,
   call_each,
@@ -28,7 +28,6 @@ import {
 } from '@hyper/array'
 // reexport them
 export {
-  slice,
   each,
   each_reverse,
   call_each,
@@ -44,71 +43,6 @@ export {
   uniq,
 }
 
-
-export const error = (message, type = Error) => {
-  if (message instanceof Error) throw message
-  else throw new type(message)
-}
-
-export const __debug = (msg) => {
-  if (msg) console.log('entering the debugger. reason:\n    ' + msg)
-  if (typeof DEBUG !== 'undefined') debugger
-  else console.warn('continuing... (debug not enabled)')
-}
-
-export const int = (s) => parseInt(s, 10)
-export const hex = (s) => parseInt(s, 16)
-export const float = parseFloat
-
-export const is_fn = (fn) => typeof fn === 'function'
-export const not_fn = (fn) => typeof fn !== 'function'
-export { is_fn as is_func, is_fn as is_function }
-export { not_fn as not_func, not_fn as not_function }
-
-export const is_obj = (obj) => typeof obj === 'object'
-export const not_obj = (obj) => typeof obj !== 'object'
-export { is_obj as is_object }
-export { not_obj as not_object }
-
-export const is_str = (str) => typeof str === 'string'
-export const not_str = (str) => typeof str !== 'string'
-export { is_str as is_string }
-export { not_str as not_string }
-
-export const is_num = (num) => typeof num === 'number'
-export const not_num = (num) => typeof num !== 'number'
-export { is_num as is_number }
-export { not_num as not_number }
-
-export const is_bool = (bool) => typeof bool === 'boolean'
-export const not_bool = (bool) => typeof bool !== 'boolean'
-export { is_bool as is_boolean }
-export { not_bool as not_boolean }
-
-export const is_void = (v) => typeof v === 'undefined'
-export const not_void = (v) => typeof v !== 'undefined'
-export { is_void as is_undefined }
-export { not_void as not_undefined }
-
-export const is_nil = (v) => v == null
-export const not_nil = (v) => v != null
-
-export const is_truthy = (v) => v != null && v
-export const is_falsey = (v) => v != null && !v
-export { is_truthy as is_truthey, is_truthy as is_truthie }
-export { is_falsey as is_falsy, is_falsey as is_falsie }
-
-export const is = obj_is
-export const isnt = (a, b) => !obj_is(a, b)
-
-export const is_empty = (value) => (!value || not_obj(value))
-  ? !value
-  : !(is_array(value)
-    ? value
-    : Object.keys(value)).length
-
-export const is_obv = (obv) => is_fn(obv) && obv._obv
-export const is_obv_type = (obv, type) => is_fn(obv) && (obv._obv === type)
 
 // swaps two elements in an array/object
 export const swap = (o, to, from) => {
