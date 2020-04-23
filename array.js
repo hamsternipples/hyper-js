@@ -1,4 +1,5 @@
 
+import { is_fn } from '@hyper/global'
 import { new_array, is_array, slice } from '@hyper/global'
 export { new_array, is_array, slice }
 
@@ -25,19 +26,41 @@ export const reverse_props = (obj, k, ret = {}) => {
   return ret
 }
 
-export const concat = (arr1, arr2) => {
+// old version. I think spread version is probably faster.
+// @Speed: benchmark these and get rid of the slow ones.
+export const concat_old = (arr1, arr2) => {
   var l1 = arr1.length
   var l2 = arr2.length
-  var res = empty_array(l1 + l2)
+  var res = new_array(l1 + l2)
   var i = 0, i2 = 0
   for (; i < l1; i++) res[i] = arr1[i]
   for (; i2 < l2; i2++) res[i + i2] = arr2[i2]
   return res
 }
 
+export const concat_many_big = (...arr) => {
+  var n = 0
+  var ii, j, i = 0
+  for (; i < arr.length; i++) n += arr[i].length
+  var ret = new_array(n)
+  for (i = ii = 0; i < arr.length; i++)
+    for (j = 0; j < arr[i].length; j++)
+      ret[ii++] = arr[i][j]
+  return ret
+}
+
+export const concat_many = (arr1, arr2, ...more) => {
+  return (
+    more.length
+    ? concat([...arr1, ...arr2], ...more)
+    : [...arr1, ...arr2]
+  )
+}
+export const concat = (arr1, arr2) => ([...arr1, ...arr2])
+
 export const empty_array = (n = 0, init_value = 0, _arr) => {
   _arr = new_array(n)
-  while (n-- > 0) _arr[n] = typeof init_value === 'function' ? init_value(n) : init_value
+  while (n-- > 0) _arr[n] = is_fn(init_value) ? init_value(n) : init_value
   return _arr
 }
 
