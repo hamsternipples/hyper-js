@@ -324,11 +324,10 @@ export const compute = (obvs, compute_fn) => {
 }
 
 export const calc = (obvs, compute_fn) => {
-  let len = obvs.length, fn
-  let obv_vals = new_array(len)
+  var len = obvs.length, fn
+  var obv_vals = new_array(len)
 
-  // the `let` is important here, as it makes a scoped variable used inside the listener attached to the obv. (var won't work)
-  for (let i = 0; i < len; i++) {
+  for (var i = 0; i < len; i++) {
     obv_vals[i] = is_fn(fn = obvs[i]) ? fn() : fn
   }
 
@@ -344,8 +343,8 @@ export const boolean = (obv, truthy, falsey) => {
   )
 }
 
-export const obv_property = (obj, key, o) => {
-  define_prop(obj, key, define_getter((v) => { o(v) }, () => o()))
+export const obv_property = (obj, key, obv) => {
+  define_prop(obj, key, define_getter(() => obv(), (v) => { obv(v) }))
   return () => { define_prop(obj, key, define_value(o(), true)) }
 }
 
