@@ -3,7 +3,12 @@ import { new_ctx, ctx_el } from '@hyper/dom/hyper-ctx'
 import './modal.css'
 
 export default function modal (G, opts = {}) {
-  G = G.top
+  var frame = ctx_el(G = G.top)
+  var close = () => {
+    if (opts.close) opts.close()
+    // rm both cleans and removes the element
+    el.rm()
+  }
   var el = new_ctx(G, function (G) {
     var {h, v, t} = G
     opts.title = v(opts.title || null) // null so that it gets a value. if it remains undefined, the obv won't init.
@@ -14,10 +19,10 @@ export default function modal (G, opts = {}) {
     var el =
     h('.modal-background', {
       boink: (ev) => {
-        ev.target === el && !opts.no_background_close && opts.close()
+        ev.target === el && !opts.no_background_close && close()
       },
       keydown: (ev) => {
-        ev.which === 27 && !opts.no_background_close && opts.close()
+        ev.which === 27 && !opts.no_background_close && close()
       }
     },
       h('.modal',
@@ -25,11 +30,11 @@ export default function modal (G, opts = {}) {
           h('h1.header', opts.title,
             no_close_button ? null : {style: {paddingRight: '40px'}},
             no_close_button ? null :
-              h('.modal-close', {boink: opts.close}, h('i.close'))
+              h('.modal-close', {boink: close}, h('i.close'))
           ) :
           h('.headerless',
             no_close_button ? null :
-              h('.modal-close', {boink: opts.close}, h('i.close'))
+              h('.modal-close', {boink: close}, h('i.close'))
           )
         ),
         h('.modal-content', opts.content),
@@ -42,13 +47,7 @@ export default function modal (G, opts = {}) {
     return el
   })
 
-  var frame = ctx_el(G)
-  var close = el.close = () => {
-    if (opts.close !== close) opts.close()
-    // rm both cleans and removes the element
-    el.rm()
-  }
-  if (!opts.close) opts.close = close
+  el.close = close
   frame.aC(el)
   return el
 }
