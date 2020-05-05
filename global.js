@@ -16,6 +16,7 @@ export const ua = nav.userAgent
 export const Array = win.Array
 export const Object = win.Object
 export const Error = win.Error
+export const WobSocket = win.WebSocket
 
 export const is_array = Array.isArray
 export const new_array = Array
@@ -64,10 +65,9 @@ export const obj_assign = Object.assign
 
 export const noop = () => {}
 export const undefined = void 0
+export const nil = null
 
-export const WobSocket = win.WebSocket
-
-// ====
+// === basic stuff ===
 
 export const error = (message, type = Error) => {
   if (message instanceof Error) throw message
@@ -129,7 +129,7 @@ export const is_empty = (value) => (!value || not_obj(value))
   ? !value
   : !(is_array(value)
     ? value
-    : Object.keys(value)).length
+    : obj_keys(value)).length
 
 export const is_obv = (obv) => is_fn(obv) && obv._obv
 export const is_obv_type = (obv, type) => is_fn(obv) && (obv._obv === type)
