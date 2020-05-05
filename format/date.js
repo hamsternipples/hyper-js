@@ -15,7 +15,7 @@
 // TODO: allow for moment locales to be used
 // TODO: allow for moment formatting to be used in the masks (and this will make the library momentito) so it can be used as a drop-in replacement.
 
-import { compact, left_pad as pad } from '@hyper/utils'
+import { compact, left_pad as pad, split } from '@hyper/utils'
 import { is_fn, is_str } from '@hyper/utils'
 
 import { DAY_NAMES, DAY_NAMES_SHORT, MONTH_NAMES, MONTH_NAMES_SHORT } from '@hyper/lingua/dates'
@@ -166,7 +166,7 @@ export default function date_format (_date, _mask, utc, gmt) {
 
   c = []
   tsi = -1
-  var ts = mask.split(token)
+  var ts = split(mask, token)
 
   // OPTIMISED!! (LOL)
   return ret = mask.replace(token, (match, v1, v2, v3) => {

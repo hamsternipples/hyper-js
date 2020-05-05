@@ -63,6 +63,8 @@ export const obj_values = Object.values
 export const obj_create = Object.create
 export const obj_assign = Object.assign
 
+export const now = Date.now
+
 export const noop = () => {}
 export const undefined = void 0
 export const nil = null

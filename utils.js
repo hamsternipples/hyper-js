@@ -200,7 +200,9 @@ export const mergeDeepArray =(target, ...sources) => {
   return mergeDeep(target, ...sources)
 }
 
-export const now = Date.now
+export const split = (str, by = ' ') => {
+  return str.split(by)
+}
 
 // left_pad((1234).toString(16), 20, '0')
 // > "000000000000000004d2"

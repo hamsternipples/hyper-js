@@ -1,5 +1,5 @@
 
-import { each, assign, float, next_tick } from '@hyper/utils'
+import { each, assign, float, next_tick, split } from '@hyper/utils'
 import { set_style } from '@hyper/dom/style'
 import { win, body, getComputedStyle } from '@hyper/dom-base'
 import { on, off } from '@hyper/dom-base'
@@ -61,16 +61,16 @@ function nlElastic (node) {
 
   var boxOuter = borderBox ? [
     // width
-    sum_prop_values(taStyle, 'border-right-width|padding-right|padding-left|border-left-width'),
+    sum_prop_values(taStyle, 'border-right-width padding-right padding-left border-left-width'),
     //height
-    sum_prop_values(taStyle, 'border-top-width|padding-top|padding-bottom|border-bottom-width'),
+    sum_prop_values(taStyle, 'border-top-width padding-top padding-bottom border-bottom-width'),
   ] : [0, 0]
 
   var minHeightValue = int_prop_value(taStyle, 'min-height')
   var heightValue = int_prop_value(taStyle, 'height')
   var minHeight = Math.max(minHeightValue, heightValue) - boxOuter[1]
   var maxHeight = int_prop_value(taStyle, 'max-height')
-  var copyStyle = 'font-family|font-size|font-weight|font-style|letter-spacing|line-height|text-transform|word-spacing|text-indent'.split('|')
+  var copyStyle = split('font-family font-size font-weight font-style letter-spacing line-height text-transform word-spacing text-indent')
 
   var active, mirror
 

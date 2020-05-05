@@ -1,4 +1,4 @@
-import { error, is_array, int } from '@hyper/utils'
+import { error, is_array, int, split } from '@hyper/utils'
 
 import { win, doc, nav, ua, raf } from '@hyper/global'
 import { getComputedStyle, customElements } from '@hyper/global'
@@ -36,13 +36,13 @@ export const which = (event) => (event = event || win.event).which === null ? ev
 const anchor = cE('a')
 // export const parse_href = (href) => (anchor.href = href, anchor)
 export const href_pathname = (href) => (anchor.href = href, anchor.pathname)
-export const href_query = (href) => (anchor.href = href, anchor.search.slice(1).split('&'))
+export const href_query = (href) => (anchor.href = href, split(anchor.search.slice(1), '&'))
 export const href_hash = (href) => (anchor.href = href, anchor.hash.slice(1))
 
 export const get_prop_value = (obj, prop) => obj.getPropertyValue(prop)
 export const int_prop_value = (obj, prop) => int(obj.getPropertyValue(prop))
 export const sum_prop_values = (obj, props) => (
-  is_array(props) ? props : props.split('|')
+  is_array(props) ? props : split(props)
 ).reduce((total, prop) => {
   return total + int_prop_value(obj, prop)
 }, 0)

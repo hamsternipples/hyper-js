@@ -1,7 +1,7 @@
 
 import { value } from '@hyper/dom/observable'
 import { getComputedStyle, bounding_rect } from '@hyper/dom-base'
-import { get_prop_value, int_prop_value, sum_prop_values } from '@hyper/dom-base'
+import { get_prop_value, int_prop_value } from '@hyper/dom-base'
 
 function positioned (node, target) {
   if (ANCIENT) error('not supported yet. add: https://github.com/juggle/resize-observer')

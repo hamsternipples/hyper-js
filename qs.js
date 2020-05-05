@@ -1,6 +1,6 @@
 // knicked from https://github.com/Alex1990/tiny-qs/blob/master/tiny-qs.js
 
-import { each } from '@hyper/utils'
+import { each, split } from '@hyper/utils'
 
 var objProto = Object.prototype
 
@@ -72,11 +72,11 @@ qs.parse = function (str, decode) {
     decode = decodeURIComponent
   }
 
-  str = str.split(sep)
+  str = split(str, sep)
   var data = {}
 
   _.each(str, function (pair) {
-    pair = pair.split(eq)
+    pair = split(pair, eq)
     var key = decode(pair[0])
     var value = pair[1] !== undefined ? decode(pair[1]) : ''
 
