@@ -7,7 +7,6 @@
 
 /*
 TODO:
-- make RouteData a plain old object, and reduce its size.
 - when starting without a defined base, it should automatically detect the base
 */
 
@@ -15,13 +14,14 @@ import { win, location, origin, base_path } from '@hyper/dom-base'
 import { href_pathname, href_query, href_hash } from '@hyper/dom-base'
 import { lookup_parent_with_attr } from '@hyper/dom-base'
 import { on, off, prevent_default, which } from '@hyper/dom-base'
-import { noop, slasher, is_array, error } from '@hyper/utils'
+import { is_fn, is_str, is_array } from '@hyper/global'
+import { noop, slasher, error, each, split } from '@hyper/utils'
 import { mixin_pubsub } from '@hyper/listeners'
 import isEqual from '@hyper/isEqual'
 
 const QUERYPAIR_REGEX = /^([\w\-]+)(?:=([^&]*))?$/
 const SEGMENT_PARAM_REGEX = /^:([\w\-]+)\??$/
-const HANDLERS = [ 'beforeenter', 'enter', 'leave', 'update' ]
+const HANDLERS = [ 'beforeenter', 'enter', 'leave' ] //, 'update'
 
 const get_internal_link_element = (event) => {
   let el = event.composed ? event.composedPath()[0] : event.target
@@ -37,68 +37,54 @@ const get_internal_link_element = (event) => {
     ) ? null : el
 }
 
-// @Cleanup: why is this necessary?? seems like the same data structure could be made more succinctly
-class RouteData {
-  constructor ({ route, pathname, params, query, hash, scrollX, scrollY, isInitial }) {
-    this._route = route
-    this.pathname = pathname
-    this.params = params
-    this.query = query
-    this.hash = hash
-    // this.isInitial = isInitial
-    this.scrollX = scrollX
-    this.scrollY = scrollY
-  }
 
-  matches (href) {
-    return this._route.matches(href)
-  }
+// helper, in case you ever want to set a route's path
+export const set_path = (route, new_path) => {
+  let path = slasher(new_path, 1)
+  route.path = path
+  route.segments = split(path, '/')
 }
 
+export const route_matches = (route, href) => {
+  var a = split(slasher(href_pathname(href), 1), '/')
+  var b = route.segments
+  var i = a.length
+  if (i > b.length) return false
+
+  while (i--) {
+    if ((a[i] !== b[i]) && (b[i][0] !== ':')) {
+      return false
+    }
+  }
+
+  return true
+}
 
 class Route {
   constructor (path, options, ctx) {
-    this.path = path
-    this.ctx = ctx || this
+    var self = this
+    set_path(self, path)
+    self.ctx = ctx || self
 
-    if (typeof options === 'function') {
-      options = { enter: options }
-    }
-
-    for (let handler of HANDLERS) {
-      // only set the update function if we're given it
-      if (handler !== 'update' || typeof options[handler] === 'function') {
-        this[handler] = (route, other) => {
-          let value, fn
-
-          if (typeof (fn = options[handler]) === 'function') {
-            value = fn.call(this.ctx, route, other)
-          }
-
-          return Promise.resolve(value)
-        }
+    const add_handler = (handler, fn) => {
+      self[handler] = (route, other) => {
+        return Promise.resolve(is_fn(fn)
+          ? fn.call(ctx, route, other)
+          : undefined
+        )
       }
     }
-  }
 
-  set path (_path) {
-    let path = slasher(_path, 1)
-    this._path = path
-    this.segments = path.split('/')
-  }
-
-  get path () {
-    return this._path
-  }
-
-  matches (href) {
-    return segmentsMatch(slasher(href_pathname(href), 1).split('/'), this.segments)
+    add_handler('enter', is_fn(options) ? options : options.enter)
+    add_handler('beforeenter', options.beforeenter)
+    add_handler('leave', options.leave)
+    add_handler('update') // I don't really know why update doesn't check options.
   }
 
   exec (target, isInitial, is404) {
     let href = target.href
     let pathname = slasher(href_pathname(href), 1)
-    let segments = pathname.split('/')
+    let segments = split(pathname, '/')
     let _segments = this.segments
     let params = {}
 
@@ -142,7 +128,8 @@ class Route {
       }
     }
 
-    return new RouteData({
+    // @Cleanup: how much of this is needed?
+    return {
       route: this,
       isInitial,
       pathname,
@@ -151,25 +138,12 @@ class Route {
       hash: href_hash(href),
       scrollX: target.scrollX,
       scrollY: target.scrollY
-    })
-  }
-}
-
-const segmentsMatch = (a, b) => {
-  if (a.length > b.length) return
-
-  let i = a.length
-  while (i--) {
-    if ((a[i] !== b[i]) && (b[i][0] !== ':')) {
-      return false
     }
   }
-
-  return true
 }
 
 
-const sameOrigin = (href) => typeof href === 'string' && href.indexOf(origin) === 0
+const sameOrigin = (href) => is_str(href) && href.indexOf(origin) === 0
 const isSameRoute = (routeA, routeB, dataA, dataB) => (
   routeA === routeB &&
   dataA.hash === dataB.hash &&
@@ -218,6 +192,9 @@ export default class RoadTrip {
   start (options = {}) {
     // changed to pathname
     const start_href = location.pathname // location.href
+    var max_segments = this.routes.reduce((max, route) => {
+      return Math.max(route.segments.length, max)
+    }, 0)
 
     // this will become a base detector here..
     // it will get basePath and then split it into segments.
@@ -225,12 +202,12 @@ export default class RoadTrip {
     // next, for all routes which match
     // eg. if the current path is 4 segments long, and the longest route is 2 segments, then we can assume that for /xxx/xxx/yyy/yyy, /xxx/xxx is the base, and /yyy/yyy is the route (where /yyy/yyy matches one of the routes)
     let base = this.base
-    if (!base) {
+    if (!base && DEBUG) {
       if (DEBUG) error('soon, you can do this. for now, you must define the base in the constructor, because the add function depends on that data being available')
       this.base = slasher(start_href)
     }
 
-    const href = this.routes.some(route => route.matches(start_href)) ?
+    const href = this.routes.some(route => route_matches(route, start_href)) ?
       start_href :
       (options.fallback || this.base)
 
@@ -323,7 +300,7 @@ export default class RoadTrip {
     this.transitioning = target
 
     promise =
-      new_route === cur_route && typeof new_route.update === 'function' ?
+      new_route === cur_route && is_fn(new_route.update) ?
         new_route.update(new_data, cur_data)
       : cur_route.leave(cur_data, new_data)
         .then(() => new_route.beforeenter(new_data, cur_data))
@@ -403,20 +380,19 @@ export const watch_links = (roadtrip, container_el) => {
     goto_path = path
 
     if (roadtrip.base) {
-      if (path.indexOf(roadtrip.base) === 0) path = path.substr(roadtrip.base.length)
+      if (path.indexOf(roadtrip.base) === 0)
+        path = path.substr(roadtrip.base.length)
       if (goto_path === path) {
         path = roadtrip.base + path
-        if (roadtrip.routes.some(route => route.matches(path))) goto_path = path
+        if (roadtrip.routes.some(route => route_matches(route, path)))
+          goto_path = path
         else return cancel_event_and_goto(event, path, {code: 404})
       }
     }
 
-    // no match? allow navigation if roadtrip._404 isn't set
-    if (!roadtrip.routes.some(route => route.matches(goto_path)) && !roadtrip._404) {
-      return cancel_event_and_goto(event, goto_path, {code: 404})
-    }
-
-    cancel_event_and_goto(event, goto_path, {code: 200})
+    return cancel_event_and_goto(event, goto_path, {
+      code: !roadtrip._404 && !roadtrip.routes.some(route => route_matches(route, goto_path)) ? 404 : 200
+    })
   }
 
   let popstate_handler = (event) => {
