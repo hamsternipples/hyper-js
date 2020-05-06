@@ -118,6 +118,8 @@ export { not_void as not_undefined }
 
 export const is_nil = (v) => v == null
 export const not_nil = (v) => v != null
+export { is_nil as is_nullish }
+export { not_nil as not_nullish }
 
 export const is_truthy = (v) => v != null && v
 export const is_falsey = (v) => v != null && !v
