@@ -185,10 +185,10 @@
  * @module phoenix
  */
 
-import { win } from '@hyper/global'
+import { error, win, XMLHttpRequest, WebSocket } from '@hyper/global'
+import { each } from '@hyper/array'
+import { on } from '@hyper/dom-base'
 
-const phxWindow = win
-const global = win
 const DEFAULT_VSN = "2.0.0"
 const SOCKET_STATES = {connecting: 0, open: 1, closing: 2, closed: 3}
 const DEFAULT_TIMEOUT = 10000
@@ -302,16 +302,8 @@ class Push {
   /**
    * @private
    */
-  matchReceive({status, response, ref}){
-    this.recHooks.filter( h => h.status === status )
-                 .forEach( h => h.callback(response) )
-  }
-
-  /**
-   * @private
-   */
-  cancelRefEvent(){ if(!this.refEvent){ return }
-    this.channel.off(this.refEvent)
+  cancelRefEvent(){
+    if(this.refEvent) this.channel.off(this.refEvent)
   }
 
   /**
@@ -330,10 +322,13 @@ class Push {
     this.refEvent = this.channel.replyEventName(this.ref)
 
     this.channel.on(this.refEvent, payload => {
+      let {status, response} = payload
       this.cancelRefEvent()
       this.cancelTimeout()
       this.receivedResp = payload
-      this.matchReceive(payload)
+      each(this.recHooks, hook => {
+        if (hook.status === status) hook.callback(response)
+      })
     })
 
     this.timeoutTimer = setTimeout(() => {
@@ -388,7 +383,7 @@ export class Channel {
     this.joinPush.receive("ok", () => {
       this.state = CHANNEL_STATES.joined
       this.rejoinTimer.reset()
-      this.pushBuffer.forEach( pushEvent => pushEvent.send() )
+      each(this.pushBuffer, pushEvent => pushEvent.send() )
       this.pushBuffer = []
     })
     this.joinPush.receive("error", () => {
@@ -427,7 +422,7 @@ export class Channel {
    */
   join(timeout = this.timeout){
     if(this.joinedOnce){
-      throw new Error(`tried to join multiple times. 'join' can only be called a single time per channel instance`)
+      error(`tried to join multiple times. 'join' can only be called a single time per channel instance`)
     } else {
       this.timeout = timeout
       this.joinedOnce = true
@@ -512,9 +507,9 @@ export class Channel {
    */
   push(event, payload, timeout = this.timeout){
     if(!this.joinedOnce){
-      throw new Error(`tried to push '${event}' to '${this.topic}' before joining. Use channel.join() before pushing events`)
+      error(`tried to push '${event}' to '${this.topic}' before joining. Use channel.join() before pushing events`)
     }
-    let pushEvent = new Push(this, event, function(){ return payload }, timeout)
+    let pushEvent = new Push(this, event, (() => payload), timeout)
     if(this.canPush()){
       pushEvent.send()
     } else {
@@ -617,7 +612,7 @@ export class Channel {
    */
   trigger(event, payload, ref, joinRef){
     let handledPayload = this.onMessage(event, payload, ref, joinRef)
-    if(payload && !handledPayload){ throw new Error("channel onMessage callbacks must return the payload, modified or unmodified") }
+    if(payload && !handledPayload){ error("channel onMessage callbacks must return the payload, modified or unmodified") }
 
     for (let i = 0; i < this.bindings.length; i++) {
       const bind = this.bindings[i]
@@ -750,22 +745,29 @@ export class Socket {
     this.sendBuffer           = []
     this.ref                  = 0
     this.timeout              = opts.timeout || DEFAULT_TIMEOUT
-    this.transport            = opts.transport || global.WebSocket || LongPoll
+    this.transport            = opts.transport || WebSocket || (ANCIENT && LongPoll)
     this.defaultEncoder       = Serializer.encode
     this.defaultDecoder       = Serializer.decode
     this.closeWasClean        = false
     this.unloaded             = false
     this.binaryType           = opts.binaryType || "arraybuffer"
-    if(this.transport !== LongPoll){
-      this.encode = opts.encode || this.defaultEncoder
-      this.decode = opts.decode || this.defaultDecoder
-    } else {
+    if (ANCIENT && this.transport === LongPoll) {
       this.encode = this.defaultEncoder
       this.decode = this.defaultDecoder
+    } else {
+      this.encode = opts.encode || this.defaultEncoder
+      this.decode = opts.decode || this.defaultDecoder
     }
-    if(phxWindow && phxWindow.addEventListener){
-      phxWindow.addEventListener("unload", e => {
+    if(ANCIENT && (win && win.addEventListener)){
+      win.addEventListener("unload", e => {
         if(this.conn){
+          this.unloaded = true
+          this.abnormalClose("unloaded")
+        }
+      })
+    } else {
+      on(win, 'unload', e => {
+        if (this.conn){
           this.unloaded = true
           this.abnormalClose("unloaded")
         }
@@ -836,17 +838,9 @@ export class Socket {
   }
 
   /**
-   *
-   * @param {Object} params - The params to send when connecting, for example `{user_id: userToken}`
-   *
-   * Passing params to connect is deprecated; pass them in the Socket constructor instead:
-   * `new Socket("/socket", {params: {user_id: userToken}})`.
+   * Connects the socket
    */
-  connect(params){
-    if(params){
-      console && console.log("passing params to connect is deprecated. Instead pass :params to the Socket constructor")
-      this.params = closure(params)
-    }
+  connect(){
     if(this.conn){ return }
     this.closeWasClean = false
     this.conn = new this.transport(this.endPointURL())
@@ -927,7 +921,7 @@ export class Socket {
     this.flushSendBuffer()
     this.reconnectTimer.reset()
     this.resetHeartbeat()
-    this.stateChangeCallbacks.open.forEach(([, callback]) => callback() )
+    each(this.stateChangeCallbacks.open, ([, callback]) => callback() )
   }
 
   /**
@@ -956,7 +950,7 @@ export class Socket {
     if(!this.closeWasClean){
       this.reconnectTimer.scheduleTimeout()
     }
-    this.stateChangeCallbacks.close.forEach(([, callback]) => callback(event) )
+    each(this.stateChangeCallbacks.close, ([, callback]) => callback(event) )
   }
 
   /**
@@ -965,14 +959,14 @@ export class Socket {
   onConnError(error){
     if (this.hasLogger()) this.log("transport", error)
     this.triggerChanError()
-    this.stateChangeCallbacks.error.forEach(([, callback]) => callback(error) )
+    each(this.stateChangeCallbacks.error, ([, callback]) => callback(error) )
   }
 
   /**
    * @private
    */
   triggerChanError(){
-    this.channels.forEach( channel => {
+    each(this.channels, channel => {
       if(!(channel.isErrored() || channel.isLeaving() || channel.isClosed())){
         channel.trigger(CHANNEL_EVENTS.error)
       }
@@ -1078,7 +1072,7 @@ export class Socket {
 
   flushSendBuffer(){
     if(this.isConnected() && this.sendBuffer.length > 0){
-      this.sendBuffer.forEach( callback => callback() )
+      each(this.sendBuffer, callback => callback() )
       this.sendBuffer = []
     }
   }
@@ -1155,7 +1149,7 @@ export class LongPoll {
 
       switch(status){
         case 200:
-          messages.forEach(msg => this.onmessage({data: msg}))
+          each(messages, msg => this.onmessage({data: msg}))
           this.poll()
           break
         case 204:
@@ -1171,7 +1165,7 @@ export class LongPoll {
           this.onerror()
           this.closeAndRetry()
           break
-        default: throw new Error(`unhandled poll status ${status}`)
+        default: error(`unhandled poll status ${status}`)
       }
     })
   }
@@ -1191,26 +1185,28 @@ export class LongPoll {
   }
 }
 
-export class Ajax {
+export const Ajax = {
 
-  static request(method, endPoint, accept, body, timeout, ontimeout, callback){
-    if(global.XDomainRequest){
+  request(method, endPoint, accept, body, timeout, ontimeout, callback){
+    if(ANCIENT && win.XDomainRequest){
       let req = new XDomainRequest() // IE8, IE9
       this.xdomainRequest(req, method, endPoint, body, timeout, ontimeout, callback)
     } else {
-      let req = global.XMLHttpRequest ?
-                  new global.XMLHttpRequest() : // IE7+, Firefox, Chrome, Opera, Safari
+      let req = (!ANCIENT || XMLHttpRequest) ?
+                  new XMLHttpRequest() : // IE7+, Firefox, Chrome, Opera, Safari
                   new ActiveXObject("Microsoft.XMLHTTP") // IE6, IE5
       this.xhrRequest(req, method, endPoint, accept, body, timeout, ontimeout, callback)
     }
-  }
+  },
 
-  static xdomainRequest(req, method, endPoint, body, timeout, ontimeout, callback){
+  xdomainRequest (req, method, endPoint, body, timeout, ontimeout, callback){
     req.timeout = timeout
     req.open(method, endPoint)
     req.onload = () => {
-      let response = this.parseJSON(req.responseText)
-      callback && callback(response)
+      if (callback) {
+        let response = this.parseJSON(req.responseText)
+        callback(response)
+      }
     }
     if(ontimeout){ req.ontimeout = ontimeout }
 
@@ -1218,9 +1214,9 @@ export class Ajax {
     req.onprogress = () => {}
 
     req.send(body)
-  }
+  },
 
-  static xhrRequest(req, method, endPoint, accept, body, timeout, ontimeout, callback){
+  xhrRequest (req, method, endPoint, accept, body, timeout, ontimeout, callback) {
     req.open(method, endPoint, true)
     req.timeout = timeout
     req.setRequestHeader("Content-Type", accept)
@@ -1234,24 +1230,24 @@ export class Ajax {
     if(ontimeout){ req.ontimeout = ontimeout }
 
     req.send(body)
-  }
+  },
 
-  static parseJSON(resp){
+  parseJSON(resp) {
     if(!resp || resp === ""){ return null }
 
     try {
       return JSON.parse(resp)
     } catch(e) {
-      console && console.log("failed to parse JSON response", resp)
+      if (DEBUG) console.log("failed to parse JSON response", resp)
       return null
     }
-  }
+  },
 
-  static serialize(obj, parentKey){
-    let queryStr = []
+  serialize(obj, parentKey){
+    var queryStr = []
     for(var key in obj){ if(!obj.hasOwnProperty(key)){ continue }
-      let paramKey = parentKey ? `${parentKey}[${key}]` : key
-      let paramVal = obj[key]
+      var paramKey = parentKey ? `${parentKey}[${key}]` : key
+      var paramVal = obj[key]
       if(typeof paramVal === "object"){
         queryStr.push(this.serialize(paramVal, paramKey))
       } else {
@@ -1259,9 +1255,9 @@ export class Ajax {
       }
     }
     return queryStr.join("&")
-  }
+  },
 
-  static appendParams(url, params){
+  appendParams(url, params){
     if(Object.keys(params).length === 0){ return url }
 
     let prefix = url.match(/\?/) ? "&" : "?"
@@ -1297,7 +1293,7 @@ export class Presence {
       this.joinRef = this.channel.joinRef()
       this.state = Presence.syncState(this.state, newState, onJoin, onLeave)
 
-      this.pendingDiffs.forEach(diff => {
+      each(this.pendingDiffs, diff => {
         this.state = Presence.syncDiff(this.state, diff, onJoin, onLeave)
       })
       this.pendingDiffs = []

@@ -16,7 +16,8 @@ export const ua = nav.userAgent
 export const Array = win.Array
 export const Object = win.Object
 export const Error = win.Error
-export const WobSocket = win.WebSocket
+export const WebSocket = win.WebSocket
+export const XMLHttpRequest = win.XMLHttpRequest
 
 export const is_array = Array.isArray
 export const new_array = Array
