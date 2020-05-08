@@ -185,7 +185,10 @@
  * @module phoenix
  */
 
-import { error, win, XMLHttpRequest, WebSocket } from '@hyper/global'
+import { error, noop, is_fn, is_void, is_obj } from '@hyper/global'
+import { win, XMLHttpRequest, WebSocket } from '@hyper/global'
+import { setTimeout, setInterval } from '@hyper/global'
+import { clearTimeout, clearInterval } from '@hyper/global'
 import { each } from '@hyper/array'
 import { on } from '@hyper/dom-base'
 
@@ -221,11 +224,10 @@ const TRANSPORTS = {
 
 // wraps value in closure or returns closure
 let closure = (value) => {
-  if(typeof value === "function"){
+  if(is_fn(value)){
     return value
   } else {
-    let closure = function(){ return value }
-    return closure
+    return () => value
   }
 }
 
@@ -490,7 +492,7 @@ export class Channel {
    */
   off(event, ref){
     this.bindings = this.bindings.filter((bind) => {
-      return !(bind.event === event && (typeof ref === "undefined" || ref === bind.ref))
+      return !(bind.event === event && (is_void(ref) || ref === bind.ref))
     })
   }
 
@@ -816,8 +818,8 @@ export class Socket {
   endPointURL(){
     let uri = Ajax.appendParams(
       Ajax.appendParams(this.endPoint, this.params()), {vsn: this.vsn})
-    if(uri.charAt(0) !== "/"){ return uri }
-    if(uri.charAt(1) === "/"){ return `${this.protocol()}:${uri}` }
+    if(uri[0] !== "/"){ return uri }
+    if(uri[1] === "/"){ return `${this.protocol()}:${uri}` }
 
     return `${this.protocol()}://${location.host}${uri}`
   }
@@ -936,7 +938,7 @@ export class Socket {
 
   teardown(callback, code, reason){
     if(this.conn){
-      this.conn.onclose = function(){} // noop
+      this.conn.onclose = noop // noop
       if(code){ this.conn.close(code, reason || "") } else { this.conn.close() }
       this.conn = null
     }
@@ -1080,14 +1082,15 @@ export class Socket {
   onConnMessage(rawMessage){
     this.decode(rawMessage.data, msg => {
       let {topic, event, payload, ref, join_ref} = msg
-      if(ref && ref === this.pendingHeartbeatRef){ this.pendingHeartbeatRef = null }
+      if (ref && ref === this.pendingHeartbeatRef){ this.pendingHeartbeatRef = null }
 
       if (this.hasLogger()) this.log("receive", `${payload.status || ""} ${topic} ${event} ${ref && "(" + ref + ")" || ""}`, payload)
 
       for (let i = 0; i < this.channels.length; i++) {
         const channel = this.channels[i]
-        if(!channel.isMember(topic, event, payload, join_ref)){ continue }
-        channel.trigger(event, payload, ref, join_ref)
+        if (channel.isMember(topic, event, payload, join_ref)) {
+          channel.trigger(event, payload, ref, join_ref)
+        }
       }
 
       for (let i = 0; i < this.stateChangeCallbacks.message.length; i++) {
@@ -1105,10 +1108,10 @@ export class LongPoll {
     this.endPoint        = null
     this.token           = null
     this.skipHeartbeat   = true
-    this.onopen          = function(){} // noop
-    this.onerror         = function(){} // noop
-    this.onmessage       = function(){} // noop
-    this.onclose         = function(){} // noop
+    this.onopen          = noop // noop
+    this.onerror         = noop // noop
+    this.onmessage       = noop // noop
+    this.onclose         = noop // noop
     this.pollEndpoint    = this.normalizeEndpoint(endPoint)
     this.readyState      = SOCKET_STATES.connecting
 
@@ -1248,7 +1251,7 @@ export const Ajax = {
     for(var key in obj){ if(!obj.hasOwnProperty(key)){ continue }
       var paramKey = parentKey ? `${parentKey}[${key}]` : key
       var paramVal = obj[key]
-      if(typeof paramVal === "object"){
+      if(is_obj(paramVal)){
         queryStr.push(this.serialize(paramVal, paramKey))
       } else {
         queryStr.push(encodeURIComponent(paramKey) + "=" + encodeURIComponent(paramVal))
@@ -1282,9 +1285,9 @@ export class Presence {
     this.channel = channel
     this.joinRef = null
     this.caller = {
-      onJoin: function(){},
-      onLeave: function(){},
-      onSync: function(){}
+      onJoin: noop,
+      onLeave: noop,
+      onSync: noop
     }
 
     this.channel.on(events.state, newState => {
@@ -1377,8 +1380,8 @@ export class Presence {
    */
   static syncDiff(currentState, {joins, leaves}, onJoin, onLeave){
     let state = this.clone(currentState)
-    if(!onJoin){ onJoin = function(){} }
-    if(!onLeave){ onLeave = function(){} }
+    if(!onJoin){ onJoin = noop }
+    if(!onLeave){ onLeave = noop }
 
     this.map(joins, (key, newPresence) => {
       let currentPresence = state[key]
