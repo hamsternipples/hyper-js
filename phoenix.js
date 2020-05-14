@@ -186,9 +186,10 @@
  * @module phoenix
  */
 
-const globalSelf = typeof self !== "undefined" ? self : null
-const phxWindow = typeof window !== "undefined" ? window : null
-const global = globalSelf || phxWindow || this
+import { win, WebSocket } from '@hyper/global'
+import { setTimeout, setInterval } from '@hyper/global'
+import { clearTimeout, clearInterval } from '@hyper/global'
+
 const DEFAULT_VSN = "2.0.0"
 const SOCKET_STATES = {connecting: 0, open: 1, closing: 2, closed: 3}
 const DEFAULT_TIMEOUT = 10000
@@ -744,7 +745,7 @@ export class Socket {
     this.sendBuffer           = []
     this.ref                  = 0
     this.timeout              = opts.timeout || DEFAULT_TIMEOUT
-    this.transport            = opts.transport || global.WebSocket || LongPoll
+    this.transport            = opts.transport || WebSocket || LongPoll
     this.defaultEncoder       = Serializer.encode
     this.defaultDecoder       = Serializer.decode
     this.closeWasClean        = false
@@ -757,14 +758,13 @@ export class Socket {
       this.encode = this.defaultEncoder
       this.decode = this.defaultDecoder
     }
-    if(phxWindow && phxWindow.addEventListener){
-      phxWindow.addEventListener("unload", e => {
-        if(this.conn){
-          this.unloaded = true
-          this.abnormalClose("unloaded")
-        }
-      })
-    }
+
+    on(win, "unload", e => {
+      if(this.conn){
+        this.unloaded = true
+        this.abnormalClose("unloaded")
+      }
+    })
     this.heartbeatIntervalMs = opts.heartbeatIntervalMs || 30000
     this.rejoinAfterMs = (tries) => {
       if(opts.rejoinAfterMs){
@@ -1235,11 +1235,11 @@ export class LongPoll {
 export class Ajax {
 
   static request(method, endPoint, accept, body, timeout, ontimeout, callback){
-    if(global.XDomainRequest){
+    if(ANCIENT && win.XDomainRequest){
       let req = new XDomainRequest() // IE8, IE9
       this.xdomainRequest(req, method, endPoint, body, timeout, ontimeout, callback)
     } else {
-      let req = new global.XMLHttpRequest(); // IE7+, Firefox, Chrome, Opera, Safari
+      let req = new XMLHttpRequest()  // IE7+, Firefox, Chrome, Opera, Safari
       this.xhrRequest(req, method, endPoint, accept, body, timeout, ontimeout, callback)
     }
   }
