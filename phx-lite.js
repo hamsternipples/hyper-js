@@ -239,120 +239,100 @@ let closure = (value) => {
  * @param {Object} payload - The payload, for example `{user_id: 123}`
  * @param {number} timeout - The push timeout in milliseconds
  */
-class Push {
-  constructor (channel, event, payload, timeout) {
-    this.channel = channel
-    this.event = event
-    this.payload = payload || (() => ({}))
-    this.receivedResp = null
-    this.timeout = timeout
-    this.timeoutTimer = null
-    this.recHooks = []
-    this.sent = false
+function Push (channel, event, payload, timeout) {
+  var receivedResp = null
+  var timeoutTimer = null
+  var recHooks = []
+  var sent
+  var ref
+  var refEvent
+  var receivedResp
+
+  if (DEBUG && !is_fn(payload)) error('payload should be a function')
+  if (DEBUG && !timeout) error('you should have a timeout')
+
+  const reset = () => {
+    cancelRefEvent()
+    ref = null
+    refEvent = null
+    receivedResp = null
+    sent = false
   }
 
-  /**
-   *
-   * @param {number} timeout
-   */
-  resend (timeout) {
-    this.timeout = timeout
-    this.reset()
-    this.send()
-  }
-
-  /**
-   *
-   */
-  send () {
-    if (this.hasReceived('timeout')) return
-    this.startTimeout()
-    this.sent = true
-    this.channel.socket.push({
-      topic: this.channel.topic,
-      event: this.event,
-      payload: this.payload(),
-      ref: this.ref,
-      join_ref: this.channel.joinRef()
-    })
-  }
-
-  /**
-   *
-   * @param {*} status
-   * @param {*} callback
-   */
-  receive (status, callback) {
-    if (this.hasReceived(status)) {
-      callback(this.receivedResp.response)
-    }
-
-    this.recHooks.push({status, callback})
-    return this
-  }
-
-  /**
-   * @private
-   */
-  reset () {
-    this.cancelRefEvent()
-    this.ref = null
-    this.refEvent = null
-    this.receivedResp = null
-    this.sent = false
-  }
-
-  /**
-   * @private
-   */
-  cancelRefEvent () {
+  const cancelRefEvent = () => {
     if (this.refEvent) this.channel.off(this.refEvent)
   }
 
-  /**
-   * @private
-   */
-  cancelTimeout () {
+  const cancelTimeout = () => {
     clearTimeout(this.timeoutTimer)
     this.timeoutTimer = null
   }
 
-  /**
-   * @private
-   */
-  startTimeout () {
-    if (this.timeoutTimer) this.cancelTimeout()
-    this.ref = this.channel.socket.makeRef()
-    this.refEvent = `chan_reply_${this.ref}`
+  const startTimeout = () => {
+    if (timeoutTimer) cancelTimeout()
+    ref = channel.socket.makeRef()
+    refEvent = `chan_reply_${ref}`
 
-    this.channel.on(this.refEvent, payload => {
+    channel.on(refEvent, payload => {
       let {status, response} = payload
-      this.cancelRefEvent()
-      this.cancelTimeout()
-      this.receivedResp = payload
-      each(this.recHooks, hook => {
+      cancelRefEvent()
+      cancelTimeout()
+      receivedResp = payload
+      each(recHooks, hook => {
         if (hook.status === status) hook.callback(response)
       })
     })
 
-    this.timeoutTimer = setTimeout(() => {
-      this.trigger('timeout', {})
-    }, this.timeout)
+    timeoutTimer = setTimeout(() => {
+      trigger('timeout', {})
+    }, timeout)
   }
 
-  /**
-   * @private
-   */
-  hasReceived (status) {
-    return this.receivedResp && this.receivedResp.status === status
+  const hasReceived = (status) => {
+    return receivedResp && receivedResp.status === status
   }
 
-  /**
-   * @private
-   */
-  trigger (status, response) {
-    this.channel.trigger(this.refEvent, {status, response})
+  const trigger = (status, response) => {
+    channel.trigger(refEvent, {status, response})
   }
+
+  const resend = (new_timeout) => {
+    timeout = new_timeout
+    reset()
+    send()
+
+    return api
+  }
+
+  const send = () => {
+    if (hasReceived('timeout')) return
+    startTimeout()
+    sent = true
+    channel.socket.push({
+      topic: channel.topic,
+      event: event,
+      payload: payload(),
+      ref: ref,
+      join_ref: channel.joinRef()
+    })
+
+    return api
+  }
+
+  const receive = (status, callback) => {
+    if (hasReceived(status)) {
+      callback(receivedResp.response)
+    }
+
+    recHooks.push({status, callback})
+    return api
+  }
+
+  var api = { resend, send, receive }
+
+
+  reset()
+  return api
 }
 
 /**
@@ -1058,7 +1038,7 @@ const serialize = (obj, parentKey) => {
     var paramKey = parentKey ? `${parentKey}[${key}]` : key
     var paramVal = obj[key]
     if (is_obj(paramVal)) {
-      queryStr.push(this.serialize(paramVal, paramKey))
+      queryStr.push(serialize(paramVal, paramKey))
     } else {
       queryStr.push(encodeURIComponent(paramKey) + '=' + encodeURIComponent(paramVal))
     }
