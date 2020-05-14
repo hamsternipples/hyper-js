@@ -1,4 +1,5 @@
-import { error, is_array, int, split } from '@hyper/utils'
+import { error, is_array, is_str, is_obj, is_nil } from '@hyper/global'
+import { int, split } from '@hyper/utils'
 
 export * from '@hyper/global'
 import { doc, win, raf } from '@hyper/global'
@@ -16,9 +17,9 @@ export const qSA = (query) => doc.querySelectorAll(query)
 
 export const isNode = (el) => el && el.nodeType
 export const isText = (el) => el && el.nodeType == 3
-export const getElementById = (el) => typeof el === 'string' ? doc.getElementById(el) : el
+export const getElementById = (el) => is_str(el) ? doc.getElementById(el) : el
 
-export const which = (event) => (event = event || win.event).which === null ? event.button : event.which
+export const which = (event) => (event = event || win.event) ? event.button : event.which
 
 const anchor = cE('a')
 // export const parse_href = (href) => (anchor.href = href, anchor)
@@ -79,9 +80,10 @@ export const lookup_parent_with_attr = (el, attr, filter) => {
 //   on(emitter, 'click', ..., { passive: false, capture: true })
 //             -kenny 14-01-2020
 let event_opts = (opts) => {
-  return opts == null ? false
-  : opts === false ? { passive: true }
-  : opts === true ? { passive: true, capture: true }
+  return is_nil(opts) ? false
+  : is_obj(opts) ? opts
+  : opts ? { passive: true, capture: true }
+  : !opts ? { passive: true }
   : opts
 }
 
