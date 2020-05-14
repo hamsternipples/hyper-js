@@ -1,20 +1,7 @@
 import { error, is_array, int, split } from '@hyper/utils'
 
-import { win, doc, nav, ua, raf } from '@hyper/global'
-import { getComputedStyle, customElements } from '@hyper/global'
-import { setInterval, clearInterval, setTimeout, clearTimeout } from '@hyper/global'
-
-export { win, doc, nav, ua, raf }
-export { getComputedStyle, customElements }
-export { setInterval, clearInterval, setTimeout, clearTimeout }
-
-export const doc_el = doc.documentElement
-export const body = doc.body
-export const IS_IE = doc.all ? true : false
-export const location = doc.location
-export const IS_LOCAL = ~location.host.indexOf('localhost')
-export const base_path = location.pathname
-export const origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '')
+export * from '@hyper/global'
+import { doc, win, raf } from '@hyper/global'
 
 // exported to allow other files to extend the prototype easier
 export const Node_prototype = Node.prototype

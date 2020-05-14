@@ -1,5 +1,5 @@
 
-import { win } from '@hyper/dom-base'
+import { win } from '@hyper/global'
 import { value } from '@hyper/dom/observable'
 import XSadd from 'ml-xsadd'
 

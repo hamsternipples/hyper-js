@@ -19,6 +19,14 @@ export const Error = win.Error
 export const WebSocket = win.WebSocket
 export const XMLHttpRequest = win.XMLHttpRequest
 
+export const doc_el = doc.documentElement
+export const body = doc.body
+export const IS_IE = doc.all ? true : false
+export const location = doc.location
+export const IS_LOCAL = ~location.host.indexOf('localhost')
+export const base_path = location.pathname
+export const origin = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '')
+
 export const is_array = Array.isArray
 export const new_array = Array
 export const slice = [].slice
