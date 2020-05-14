@@ -120,6 +120,10 @@ export const define_value = (value, writable = false, enumerable = true, configu
 export const define_prop = (obj, prop, def) => Object.defineProperty(obj, prop, def)
 export const define_props = (obj, prop_defs) => Object.defineProperties(obj, prop_defs)
 
+export const add_getter = (obj, prop, get, set, enumerable = true) => {
+  define_prop(obj, prop, define_getter(get, set, enumerable))
+}
+
 export const slasher = (_path, strip_leading) => {
   // strip trailing slash
   var path = _path.replace(/\/$/, '')
