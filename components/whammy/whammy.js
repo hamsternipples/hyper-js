@@ -2,7 +2,7 @@
 import { is_fn } from '@hyper/global'
 import { after, next_tick } from '@hyper/utils'
 import { new_ctx, ctx_el } from '@hyper/dom/hyper-ctx'
-import { eases } from './toast-zone'
+import eases from '@hyper/eases'
 
 import './whammy.css'
 

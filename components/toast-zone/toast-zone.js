@@ -2,11 +2,7 @@
 import './toast-zone.css'
 
 import { extend, after } from '@hyper/utils'
-
-export const eases = {
-  fast: 'cubic-bezier(.33,.57,0,1)',
-  impact: 'cubic-bezier(.42,0,0,1)',
-}
+import eases from '@hyper/eases'
 
 // @Improve: this could easily be a custom element.
 
