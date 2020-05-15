@@ -1,0 +1,47 @@
+
+.edit-button {
+  @bg: #eaeaea;
+  position: absolute;
+  top: 4px;
+  right: 0px;
+  fill: darken(@bg, 38%);
+  display: none;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  &:hover {
+    fill: #454545;
+    background: @bg;
+    border-radius: 50%;
+    border: solid 1px lighten(@bg, 2%);
+  }
+}
+
+ul.edit-menu {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border: solid 1px #ccc;
+  z-index: 200;
+
+  > li {
+    border-bottom: solid 1px #dedede;
+    padding: 4px 4px 2px 20px;
+    cursor: pointer;
+    display: block;
+    // for the icons, use svg. even can add filters and change their colours on hover, focus, active, etc.:
+    // https://css-tricks.com/using-svg/
+    &:last-child {
+      border: unset;
+    }
+    &:hover {
+      background: #eaeaea;
+      // text-decoration: underline;
+    }
+  }
+}
+
+.relative-container {
+  position: relative;
+}
