@@ -227,7 +227,12 @@ export const observe_event = (cleanupFuncs, el, observe_obj) => {
       if (!~s.indexOf('.')) {
         if (DEBUG && !is_fn(v)) error('observer must be a function')
         cleanupFuncs.Z(
-          obv_event(el, observe_obj[s+'.attr'], (observe_obj[s+'.event'] || s), observe_obj[s+'.valid'])(v)
+          obv_event(
+            el,
+            observe_obj[s+'.attr'],
+            (observe_obj[s+'.event'] || s),
+            observe_obj[s+'.valid']
+          )(v)
         )
       }
     }

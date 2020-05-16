@@ -4,8 +4,8 @@
 // also took some inspiration from https://github.com/Raynos/mercury
 
 // ctx shortcut guide:
-// x(): `cleanup()` - call this to call all the cleanupFuncs
-// X: `cleanupFuncs` - array of all the functions to call on cleanup
+// `ctx.x()`: call this to cleanup by calling all the `cleanupFuncs`
+// `ctx.X`: array of all the functions to call on cleanup
 // Z(fn): `cleanupFuncs.push(fn)` - add a function to the list
 
 // Node shortcut guide:
@@ -316,7 +316,9 @@ export const set_attr = (e, key_, v, cleanupFuncs = e.X) => {
     } else if (v !== undefined) {
       if (is_array(v)) {
        // not sure if this will cause problems. I can't think of any other reason to pass an array of values, unless there are multiple listeners or decorators or something. leaving it for now..
-       for (i = 0; i < v.length; i++) set_attr(e, k, v[i], cleanupFuncs)
+       for (i = 0; i < v.length; i++) {
+         set_attr(e, k, v[i], cleanupFuncs)
+       }
      } else if (is_fn(o = custom_attrs[k])) {
         o(cleanupFuncs, e, v)
       } else if (~(i = k.indexOf(':'))) {
@@ -355,7 +357,6 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
   for (v of arr) frag.aC(make_child_node(parent, v, cleanupFuncs))
 
   if (arr._obv === 'array') {
-    // TODO: add a comment to know where the array begins and ends (a la angular)
     var obv_arr_begin = comment(DEBUG ? '5:obv-arr-begin' : 5)
     var obv_arr_end = comment(DEBUG ? '6:obv-arr-end' : 6)
     var container_nodes = (idx) => {
@@ -522,8 +523,6 @@ define_prop(special_elements, 'define', define_value((name, fn, args) => {
 }))
 
 export const new_dom_context = (no_cleanup) => {
-  // TODO: turn this into ctx = new Context ((el, args) => { ... })
-  //  -- and, turn the context fn into a class??
   var ctx = hyper_hermes((el, args, i) => {
     return !~el.indexOf('-') ? cE(el)
       : (i = special_elements[el]) !== undefined ? new (customElements.get(el))(...args.splice(0, i))
@@ -811,8 +810,6 @@ export const new_ctx = (G, fn, ...args) => {
   var ctx = Object.create(G, {
     _id: define_value(++last_id),
     o: define_value(obvs),
-    x: define_getter(() => { debugger }),
-    z: define_getter(() => { debugger }),
     X: define_value(cleanupFuncs),
     Z: define_value(cleanupFuncs.Z),
     _h: define_value(null, true),
@@ -830,7 +827,7 @@ export const new_ctx = (G, fn, ...args) => {
     parent: define_value(G),
     nogc: define_value(0),
     cleanup: define_value(cleanup),
-    // x: define_value(cleanup),
+    x: define_value(cleanup),
   })
 
   var el = fn(ctx, ...args)
