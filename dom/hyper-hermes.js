@@ -864,7 +864,7 @@ define_props(Node_prototype, {
 })
 
 // shortcut to apply attributes as if they were the second argument to `h('.lala', {these ones}, ...)`
-Node_prototype.set = function (obj, cleanupFuncs) {
+Node_prototype.attrs = function (obj, cleanupFuncs) {
   every(obj, (v, k) => set_attr(this, k, v, cleanupFuncs))
 }
 
