@@ -451,7 +451,7 @@ export function Channel (topic, params, socket) {
     if (!has_joined) {
       error(`tried to push '${event}' to '${topic}' before joining. Use channel.join() before pushing events`)
     }
-    let pushEvent = new Push(this, event, (() => payload), timeout)
+    let pushEvent = new Push(channel, event, (() => payload), timeout)
     if (canPush()) {
       pushEvent.send()
     } else {
@@ -487,7 +487,7 @@ export function Channel (topic, params, socket) {
       if (socket.logger) socket.log('channel', `leave ${topic}`)
       trigger('phx_close', 'leave')
     }
-    let leavePush = new Push(this, 'phx_leave', closure({}), timeout)
+    let leavePush = new Push(channel, 'phx_leave', closure({}), timeout)
     leavePush
       .receive('ok', onClose)
       .receive('timeout', onClose)
@@ -499,7 +499,7 @@ export function Channel (topic, params, socket) {
 
   const isMember = (topic, event, payload, joinRef) => {
     if (topic !== topic) return false
-    if (joinRef && joinRef !== joinRef() && ~CHANNEL_LIFECYCLE_EVENTS.indexOf(event)) {
+    if (joinRef && joinRef !== channel.joinRef() && ~CHANNEL_LIFECYCLE_EVENTS.indexOf(event)) {
       if (socket.logger) socket.log('channel', 'dropping outdated message', {topic, event, payload, joinRef})
       return false
     } else {
