@@ -257,7 +257,7 @@ export default class RenderingArray extends ObservableArray {
       if (el && el.then) {
         el.then(v => {
           self[idx] = v
-          var parent = el.parentNode
+          var parent = el.p
           var node = make_child_node(parent, v, G.cleanupFuncs)
           if (DEBUG && !parent) error('promise unable to insert itself into the dom because el does not have a parentNode')
           else parent.rC(node, el), G.z(() => node.rm())

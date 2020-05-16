@@ -12,6 +12,7 @@ import { observe_event, add_event } from './observable-event'
 import { define_prop, kind_of, array_idx, define_value, error } from '@hyper/utils'
 import { each, call_each, every } from '@hyper/utils'
 import { after, next_tick } from '@hyper/utils'
+import { define_props, define_getter } from '@hyper/utils'
 import { is_bool, is_num, is_str, is_fn, is_obj, is_array } from '@hyper/utils'
 import { random_id } from '@hyper/random'
 
@@ -343,6 +344,18 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
 
   if (arr._obv === 'array') {
     // TODO: add a comment to know where the array begins and ends (a la angular)
+    var obv_arr_begin = comment(DEBUG ? '5:obv-arr-begin' : 5)
+    var obv_arr_end = comment(DEBUG ? '6:obv-arr-end' : 6)
+    var container_nodes = (idx) => {
+      return idx > 0
+        ? obv_arr_end
+        : idx
+          ? 0
+          : obv_arr_begin
+    }
+
+    frag.aC(obv_arr_end)
+    frag.iB(obv_arr_begin, frag.n[0])
     function onchange (ev) {
       // this should remain a 'var' -- otherwise terser will deoptimise it.
       var i, j, o, oo, len = arr.length
@@ -350,15 +363,20 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
       if (type == 'unshift') {
         for (i = ev.values.length - 1; i >= 0; i--) {
           o = make_child_node(parent, ev.values[i], cleanupFuncs)
-          parent.iB(isNode(o) ? o : txt(o), arr[0], cleanupFuncs)
+          parent.iB(
+            isNode(o) ? o : txt(o),
+            arr[0] || container_nodes(0),
+            cleanupFuncs
+          )
         }
       }
       else if (type == 'push') {
         for (i = 0; i < ev.values.length; i++) {
+          j = arr.length + ev.values.length - i - 1
           o = make_child_node(parent, ev.values[i], cleanupFuncs)
           parent.iB(
             isNode(o) ? o : txt(o),
-            arr[arr.length + ev.values.length - i - 1],
+            arr[j] || container_nodes(j),
             cleanupFuncs,
           )
         }
@@ -381,7 +399,11 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
         }
         if (ev.add) for (i = 0; i < ev.add.length; i++) {
           o = make_child_node(parent, ev.add[i], cleanupFuncs)
-          parent.iB(isNode(o) ? o : txt(o), arr[j], cleanupFuncs)
+          parent.iB(
+            isNode(o) ? o : txt(o),
+            arr[j] || container_nodes(j),
+            cleanupFuncs
+          )
         }
         // working (just in case rC has some weird cases):
         // if (ev.remove) for (i = 0; i < ev.remove; i++)
@@ -399,7 +421,11 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
           if (i !== (j = oo.indexOf(o))) {
             if (activeElement(o) || o.focused === 1) i = 1
             o.rm()
-            parent.iB(o, arr[i - 1], cleanupFuncs)
+            parent.iB(
+              o,
+              arr[i - 1] || container_nodes(i - 1),
+              cleanupFuncs
+            )
             if (i === 1) o.focus(), o.focused = 0
           }
         }
@@ -425,7 +451,11 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
         if ((j = ev.to) < 0) j += len   // -idx
         o = arr[i]
         if (activeElement(o)) i = 1
-        parent.iB(o, arr[j])
+        parent.iB(
+          o,
+          arr[j] || container_nodes(j),
+          cleanupFuncs
+        )
         if (i === 1) o.focus()
       }
       else if (type == 'swap') {
@@ -638,7 +668,7 @@ export const set_style = (e, style, cleanupFuncs) => {
 
 // hyper-ctx
 
-import { define_getter } from '@hyper/utils'
+// import { define_getter } from '@hyper/utils'
 import { getElementById } from '@hyper/dom-base'
 
 // default obv functions provided
@@ -807,12 +837,14 @@ export const new_ctx = (G, fn, ...args) => {
 }
 
 // shortcut to remove myself from the dom (and cleanup if it's got nodes)
-Node_prototype.rm = function () { return el_cleanup(this), this.remove() }
+Node_prototype.rm = function () {
+  return el_cleanup(this), this.remove()
+}
 
 // shortcut to append multiple children (w/ cleanupFuncs)
-Node_prototype.iB = function (el, ref, cleanupFuncs) {
+Node_prototype.iB = function (el, before_node, cleanupFuncs) {
   if (!cleanupFuncs) cleanupFuncs = el_ctx(el).x
-  return this.insertBefore(make_obv_child_node(this, el, cleanupFuncs), ref)
+  return this.insertBefore(make_obv_child_node(this, el, cleanupFuncs), before_node)
 }
 
 // shortcut to append multiple children (w/ cleanupFuncs)
@@ -824,6 +856,12 @@ Node_prototype.aC = function (el, cleanupFuncs) {
 Node_prototype.rC = function (new_child, old_child) {
   return this.replaceChild(new_child, old_child)
 }
+
+// shorcuts for properties
+define_props(Node_prototype, {
+  p: define_getter(function () { return this.parentNode }),
+  n: define_getter(function () { return this.childNodes }),
+})
 
 // shortcut to apply attributes as if they were the second argument to `h('.lala', {these ones}, ...)`
 Node_prototype.set = function (obj, cleanupFuncs) {
