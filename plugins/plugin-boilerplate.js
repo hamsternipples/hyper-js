@@ -17,7 +17,7 @@ import { raf } from '@hyper/global'
 
 
 function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _onload, _afterload) {
-  var tmp, mutationObserver, id, G, ctx, E, width, height, _dpr, args
+  var tmp, id, G, ctx, E, width, height, _dpr, args
   var C = mergeDeep({}, objJSON(_config), DEFAULT_CONFIG)
 
   // if a string is provided for the frame, try and find the frame by id, else make a fixud position full-size frame
@@ -53,12 +53,8 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   if (!isNode(parentNode)) parentNode = body
   parentNode.aC(frame)
 
-  // (mutationObserver = new MutationObserver((mutations) => {
-  //   // since we only want to know if frame is detached, this is a better, more efficient way:
-  //   if (!frame.parentNode) frame.cleanup()
-  // })).observe(parentNode, { childList: true })
-
-  win.GG = frame._G = G
+  frame._G = G
+  if (DEBUG) win.GG = G
   ctx.E = E = { body: doc.body, win: win }
   if (DEBUG) define_prop(E, 'frame', {get: () => error('deprecated. use `frame = el_ctx(G)` now')})
 
@@ -84,9 +80,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
 
   ;(function (_cleanup) {
     frame.cleanup = () => {
-      parentNode = frame.parentNode
-      // mutationObserver.disconnect()
-      // mutationObserver = null
+      parentNode = frame.p
       if (parentNode) parentNode.removeChild(frame)
       if (is_fn(_cleanup)) _cleanup()
     }
@@ -135,12 +129,6 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
       }
 
       frame.empty()
-
-      // remove all html comments from the body (I rememeber they caused problems, but I don't remember exatly what..)
-      // @Cleanup: is this necessary?
-      while (e = body.childNodes[i])
-        if (e.nodeName[0] === '#') body.rm(e)
-        else i++
 
       if (is_fn(onload)) {
         if (e = new_ctx(ctx, onload)) {

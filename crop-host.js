@@ -375,7 +375,7 @@ function CropHost (elCanvas, opts, events) {
     document.removeEventListener('touchmove', onMouseMove)
     elCanvas.removeEventListener('touchstart', onMouseDown)
 
-    elCanvas.parentNode.removeChild(elCanvas)
+    elCanvas.rm()
   }
 }
 

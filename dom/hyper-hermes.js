@@ -127,7 +127,7 @@ function hyper_hermes (create_element) {
           e.aC(r = comment(DEBUG ? '1:promise-value' : 1))
           l.then((v) => {
             let node = make_child_node(e, v, cleanupFuncs)
-            if (DEBUG && r.parentNode !== e) error('promise unable to insert itself into the dom because parentNode has changed')
+            if (DEBUG && r.p !== e) error('promise unable to insert itself into the dom because parentNode has changed')
             else e.rC(node, r), add_to_cleanupFuncs(() => node.rm())
           })
         } else for (k in l) set_attr(e, k, l[k], cleanupFuncs)
@@ -547,7 +547,7 @@ export const make_child_node = (parent, v, cleanupFuncs, _placeholder) => {
     : is_fn(v.then) ? (
       v.then((v, node) => {
         node = make_child_node(parent, v, cleanupFuncs)
-        if (DEBUG && _placeholder.parentNode !== parent) error('promise unable to insert itself into the dom because parentNode has changed')
+        if (DEBUG && _placeholder.p !== parent) error('promise unable to insert itself into the dom because parentNode has changed')
         else parent.rC(node, _placeholder), cleanupFuncs.z(() => node.rm())
       }),
       _placeholder = comment(DEBUG ? '2:promise-value' : 2)
@@ -575,7 +575,7 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
             } else if (DEBUG) error('somehow a null value got saved into the removal array')
           })
         } else if (r) {
-          if (DEBUG && r.parentNode !== parent) error('obv unable to replace child node because parentNode has changed')
+          if (DEBUG && r.p !== parent) error('obv unable to replace child node because parentNode has changed')
           else parent.rC(nn, r)
         }
 
@@ -594,7 +594,7 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
               if (v.then) {
                 v.then(v => val[i] = v)
               } else if (!isNode(v)) {
-                val[i] = nn.childNodes[i]
+                val[i] = nn.n[i]
               }
             }
           }), val)
@@ -741,7 +741,7 @@ export const global_ctx = () => {
 
 export const el_ctx = (el) => {
   var ctx
-  while ((ctx = EL_CTX.get(el)) == null && (el = el.parentNode) != null) {}
+  while ((ctx = EL_CTX.get(el)) == null && (el = el.p) != null) {}
   return ctx || global_ctx()
 }
 
@@ -760,13 +760,13 @@ export const el_cleanup = (el) => {
   }
 }
 
-// not used because they've been changed to weakmaps.
+// not used at the moment. needs investigation
 // export const cleanup_ctx = () => {
 //   for (let [el, ctx] of EL_CTX.entries()) {
 //     // there are definitely cases where you may hold on to a node for a little bit before reinserting it into the dom.
 //     // so, maybe it should be added to a list for gc after some timeout. if it has a parent again, remove it from the list. that may still have problems though...
 //     // the best solution right now is to set a field, 'nogc' to tell it not to get cleaned up
-//     if (!ctx.nogc && !el.parentNode) {
+//     if (!ctx.nogc && !el.p) {
 //       ctx.cleanup()
 //       EL_CTX.delete(el)
 //     }
@@ -849,7 +849,7 @@ Node_prototype.iB = function (el, before_node, cleanupFuncs) {
 
 // shortcut to append multiple children (w/ cleanupFuncs)
 Node_prototype.aC = function (el, cleanupFuncs) {
-  return this.appendChild(isNode(el) ? (el.parentNode !== this ? el : undefined) : make_obv_child_node(this, el, cleanupFuncs))
+  return this.appendChild(isNode(el) ? (el.p !== this ? el : undefined) : make_obv_child_node(this, el, cleanupFuncs))
 }
 
 // shortcut to replaceChild

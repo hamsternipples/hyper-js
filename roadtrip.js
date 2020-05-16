@@ -25,7 +25,7 @@ const HANDLERS = [ 'beforeenter', 'enter', 'leave' ] //, 'update'
 
 const get_internal_link_element = (event) => {
   let el = event.composed ? event.composedPath()[0] : event.target
-  while (el && el.nodeName !== 'A') el = el.parentNode
+  while (el && el.nodeName !== 'A') el = el.p
 
   return (
       !el ||

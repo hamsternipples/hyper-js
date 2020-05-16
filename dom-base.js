@@ -60,7 +60,7 @@ export const element_offset = (child) => {
 
 export const lookup_parent_element = (el, name) => {
   while (el && el.nodeName.toLowerCase() !== name) {
-    el = el.parentNode
+    el = el.p
   }
 
   return el
@@ -68,7 +68,7 @@ export const lookup_parent_element = (el, name) => {
 
 export const lookup_parent_with_attr = (el, attr, filter) => {
   while (el && el[attr] === undefined && (!filter || !filter(el))) {
-    el = el.parentNode
+    el = el.p
   }
 
   return el
