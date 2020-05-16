@@ -51,7 +51,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   })
 
   if (!isNode(parentNode)) parentNode = body
-  parentNode.aC(frame)
+  parentNode.aC(frame, G.X)
 
   frame._G = G
   if (DEBUG) win.GG = G
@@ -81,12 +81,12 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
   ;(function (_cleanup) {
     frame.cleanup = () => {
       parentNode = frame.p
-      if (parentNode) parentNode.removeChild(frame)
+      if (parentNode) parentNode.rC(frame)
       if (is_fn(_cleanup)) _cleanup()
     }
   })(frame.cleanup)
 
-  G.z(frame.cleanup)
+  G.Z(frame.cleanup)
 
   // DEPRECATED!! - I don't like this at all!!
   // we're going to go with a new way of setting and getting
@@ -148,7 +148,7 @@ function pluginBoilerplate (frame, parentNode, _config, _data, DEFAULT_CONFIG, _
           })
         })
 
-        G.z(() => resize.detach())
+        G.Z(() => resize.detach())
       })
     }
 

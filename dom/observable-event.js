@@ -119,7 +119,7 @@ export const toggle = (el, up_event, down_event) => {
 
 export const add_event = (cleanupFuncs, e, event, listener, opts) => {
   on(e, event, listener, opts)
-  cleanupFuncs.z(() => { off(e, event, listener, opts) })
+  cleanupFuncs.Z(() => { off(e, event, listener, opts) })
 }
 
 // https://www.html5rocks.com/en/mobile/touchandmouse/
@@ -146,7 +146,7 @@ export const boink = (cleanupFuncs, el, obv, opts) => {
   on(el, 'click', fn, opts)
   on(el, 'touchstart', fn, opts)
 
-  cleanupFuncs.z(() => {
+  cleanupFuncs.Z(() => {
     off(el, 'click', fn, opts),
     off(el, 'touchstart', fn, opts)
   })
@@ -162,7 +162,7 @@ export const press = (cleanupFuncs, el, obv, pressed = true, normal = false) => 
   on(el, 'touchstart', pressed_fn)
 
   // passing attr=0 here to tell it to not grab the value of any attribute on the el.
-  cleanupFuncs.z(() => {
+  cleanupFuncs.Z(() => {
     off(el, 'mouseup', normal_fn)
     off(el, 'mousedown', pressed_fn)
     off(el, 'touchend', normal_fn)
@@ -182,38 +182,38 @@ export const observe_event = (cleanupFuncs, el, observe_obj) => {
       press(cleanupFuncs, el, v)
     }
     else if (s === 'input' || s === 'value') {
-      cleanupFuncs.z(attribute(el, observe_obj[s+'.attr'], observe_obj[s+'.on'])(v))
+      cleanupFuncs.Z(attribute(el, observe_obj[s+'.attr'], observe_obj[s+'.on'])(v))
     }
     else if (s === 'disabled') {
-      cleanupFuncs.z(attribute(el, s, observe_obj[s+'.on'])(v))
+      cleanupFuncs.Z(attribute(el, s, observe_obj[s+'.on'])(v))
     }
     else if (s === 'hidden') {
       ANCIENT
-      ? cleanupFuncs.z(v(v => { el.style.display = v ? 'none' : '' }, 1))
-      : cleanupFuncs.z(v(v => { el.hidden = v }))
+      ? cleanupFuncs.Z(v(v => { el.style.display = v ? 'none' : '' }, 1))
+      : cleanupFuncs.Z(v(v => { el.hidden = v }))
     }
     else if (s === 'visible') {
       ANCIENT
-      ? cleanupFuncs.z(v(v => { el.style.display = !v ? 'none' : '' }, 1))
-      : cleanupFuncs.z(v(v => { el.hidden = !v }))
+      ? cleanupFuncs.Z(v(v => { el.style.display = !v ? 'none' : '' }, 1))
+      : cleanupFuncs.Z(v(v => { el.hidden = !v }))
     }
     else if (s === 'hover') {
-      cleanupFuncs.z(toggle(el, 'mouseover', 'mouseout')(v))
+      cleanupFuncs.Z(toggle(el, 'mouseover', 'mouseout')(v))
     }
     else if (s === 'touch') {
-      cleanupFuncs.z(toggle(el, 'touchstart', 'touchend')(v))
+      cleanupFuncs.Z(toggle(el, 'touchstart', 'touchend')(v))
     }
     else if (s === 'mousedown') {
-      cleanupFuncs.z(toggle(el, 'mousedown', 'mouseup')(v))
+      cleanupFuncs.Z(toggle(el, 'mousedown', 'mouseup')(v))
     }
     else if (s === 'focus') {
-      cleanupFuncs.z(toggle(el, 'focus', 'blur')(v))
+      cleanupFuncs.Z(toggle(el, 'focus', 'blur')(v))
     }
     else if (s.slice(0, 'select'.length) === 'select') {
       // 'select_value' or 'select:value' (by value)
       // 'select_label' or 'select:label' (select the label)
       s = select(el, s.slice('select'.length + 1) || 'value')
-      cleanupFuncs.z(
+      cleanupFuncs.Z(
         is_obv(v)
           ? bind2(s, v)
           : s(v)
@@ -226,7 +226,7 @@ export const observe_event = (cleanupFuncs, el, observe_obj) => {
     // case 'touchend':
       if (!~s.indexOf('.')) {
         if (DEBUG && !is_fn(v)) error('observer must be a function')
-        cleanupFuncs.z(
+        cleanupFuncs.Z(
           obv_event(el, observe_obj[s+'.attr'], (observe_obj[s+'.event'] || s), observe_obj[s+'.valid'])(v)
         )
       }

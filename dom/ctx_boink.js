@@ -15,7 +15,7 @@ const ctx_boink = (G) => {
   var click_handlers = []
 
   // context click handler
-  boink(G.x, el, (ev) => {
+  boink(G.X, el, (ev) => {
     var path = ev.path, i = 0
 
     each(click_handlers, ([not_on_this_el, cb], idx) => {
@@ -47,7 +47,7 @@ const ctx_boink = (G) => {
   // }
 
   handlers.set(G, handler)
-  G.z(() => { handlers.delete(G) })
+  G.Z(() => { handlers.delete(G) })
   return handler
 }
 

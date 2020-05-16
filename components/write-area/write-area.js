@@ -9,7 +9,7 @@ import './write-area.less'
 
 // export default const write_area = () => (G, opts, cb) {
   // var { h, v, t, c, z, L } = G
-const write_area = ({h, v, t, c, z, L, $L}, lang) => (opts, cb) => {
+const write_area = ({h, v, t, c, Z, L, $L}, lang) => (opts, cb) => {
   $L(lang) // init the language
   if (is_fn(opts)) cb = opts, opts = {}
   if (DEBUG && !is_obj(opts)) error('invalid options')
@@ -63,7 +63,7 @@ const write_area = ({h, v, t, c, z, L, $L}, lang) => (opts, cb) => {
 
   if (opts.value) {
     // two-way bind the value. now, the div.write-area will contain a value field which will be able to get/set the value of the underneith textarea.
-    z(bind2(opts.value, txt))
+    Z(bind2(opts.value, txt))
   }
 
 

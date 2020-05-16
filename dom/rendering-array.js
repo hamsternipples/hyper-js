@@ -26,7 +26,7 @@ export default class RenderingArray extends ObservableArray {
     // self.d = data instanceof ObservableArray ? data : new ObservableArray() && DEBUG && error('data must be a ObservableArray')
     self.d = data && data._obv === 'array' ? data : new ObservableArray() && DEBUG && error('data must be a ObservableArray')
     // this should have cleanupFuncs in the context (which adds h/s cleanup to the list when it makes the context)
-    G.z(() => { self.cleanup() })
+    G.Z(() => { self.cleanup() })
 
     // where we store the id/data which gets passed to the rendering function
     self._d = []
@@ -260,7 +260,7 @@ export default class RenderingArray extends ObservableArray {
           var parent = el.p
           var node = make_child_node(parent, v, G.cleanupFuncs)
           if (DEBUG && !parent) error('promise unable to insert itself into the dom because el does not have a parentNode')
-          else parent.rC(node, el), G.z(() => node.rm())
+          else parent.rC(node, el), G.Z(() => node.rm())
         })
         el = comment(DEBUG ? '5:promise-value' : 5)
       }

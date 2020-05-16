@@ -3,9 +3,15 @@
 // many modifications...
 // also took some inspiration from https://github.com/Raynos/mercury
 
-// TODO: to make errors a bit more user-friedly, I began utilising the error function.
-//       however, when building the plugin library, an errorless version should be created (to reduce size)
-//       additionally, other things unnecessary (old/unused) things can be omitted as wel, for further savings.
+// ctx shortcut guide:
+// x(): `cleanup()` - call this to call all the cleanupFuncs
+// X: `cleanupFuncs` - array of all the functions to call on cleanup
+// Z(fn): `cleanupFuncs.push(fn)` - add a function to the list
+
+// Node shortcut guide:
+// `node.aC(el, cleanupFuncs)`: append a child to `node`
+// `node.iB(el, before_node, cleanupFuncs)`: insert `el` into `node` before `before_node`
+// `node.rC(el)`: remove child `el` from `node`
 
 import { is_obv } from './observable'
 import { observe_event, add_event } from './observable-event'
@@ -56,11 +62,12 @@ export let short_attrs_rev = ((obj, k, ret = {}) => {
 // however this does:
 // h(2)
 // when common_tags = ['div','input','div.lala']
-export let common_tags = ['div']
+export var common_tags = ['div']
 
 function hyper_hermes (create_element) {
-  let cleanupFuncs = []
-  let add_to_cleanupFuncs = (fn) => {
+  var cleanupFuncs = []
+  var cleanup = () => { call_each(cleanupFuncs) }
+  var add_to_cleanupFuncs = (fn) => {
     cleanupFuncs.push(
       DEBUG && !is_fn(fn)
       ? error('adding a non-function value to cleanupFuncs')
@@ -110,17 +117,22 @@ function hyper_hermes (create_element) {
         if (!e) {
           parse_selector(l)
         } else {
-          e.aC(txt(l))
+          e.aC(txt(l, cleanupFuncs))
         }
-      } else if (is_num(l)
+      } else if (
+        is_num(l)
         || is_bool(l)
         || l instanceof Date
-        || l instanceof RegExp ) {
-          e.aC(txt(l.toString()))
-      } else if (is_array(l)) {
+        || l instanceof RegExp
+      ) {
+        var str = txt(l.toString())
+        e.aC(str, cleanupFuncs)
+      } else if (
+        is_array(l)
+        || isNode(l)
+        || l instanceof win.Text
+      ) {
         e.aC(l, cleanupFuncs)
-      } else if (isNode(l) || l instanceof win.Text) {
-        e.aC(l)
       } else if (is_obj(l)) {
         // is a promise
         if (is_fn(l.then)) {
@@ -146,8 +158,8 @@ function hyper_hermes (create_element) {
   }
 
   h.x = cleanupFuncs
-  h.z = cleanupFuncs.z = add_to_cleanupFuncs
-  h.cleanup = () => { call_each(cleanupFuncs) }
+  h.Z = cleanupFuncs.Z = add_to_cleanupFuncs
+  h.X = h.cleanup = cleanup
 
   return h
 }
@@ -158,8 +170,8 @@ function hyper_hermes (create_element) {
 // this is so that custom attributes can be used to define custom behaviour
 export let custom_attrs = {
   decorators: (cleanupFuncs, e, fn) => {
-    if (is_array(fn)) each(fn, decorator => cleanupFuncs.z(decorator(e)))
-    else cleanupFuncs.z(fn(e))
+    if (is_array(fn)) each(fn, decorator => cleanupFuncs.Z(decorator(e)))
+    else cleanupFuncs.Z(fn(e))
   },
   boink: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {boink: fn}) },
   press: (cleanupFuncs, e, fn) => { observe_event(cleanupFuncs, e, {press: fn}) },
@@ -194,7 +206,7 @@ export let custom_attrs = {
   }
 }
 
-export const set_attr = (e, key_, v, cleanupFuncs) => {
+export const set_attr = (e, key_, v, cleanupFuncs = e.X) => {
   if (DEBUG) assert_cleanupFuncs(cleanupFuncs)
   // convert short attributes to long versions. s -> style, c -> className
   var s, o, i, k = short_attrs[key_] || key_
@@ -208,7 +220,7 @@ export const set_attr = (e, key_, v, cleanupFuncs) => {
         // however, as mentioned in this article it may be desirable to use property access instead
         // https://stackoverflow.com/questions/22151560/what-is-happening-behind-setattribute-vs-attribute
         // observable (write-only) value
-        cleanupFuncs.z(v.call(e, (v) => {
+        cleanupFuncs.Z(v.call(e, (v) => {
           set_attr(e, k, v, cleanupFuncs)
         }, 1)) // 1 = do_immediately
         s = e.nodeName
@@ -270,7 +282,7 @@ export const set_attr = (e, key_, v, cleanupFuncs) => {
         else if (is_obj(v))
           every(v, (val, s) => {
             is_obv(val)
-            ? cleanupFuncs.z(val((v) => o.toggle(s, v), 1))
+            ? cleanupFuncs.Z(val((v) => o.toggle(s, v), 1))
             : o.toggle(s, val)
           })
         else o.add(v)
@@ -493,7 +505,7 @@ export const arrayFragment = (parent, arr, cleanupFuncs) => {
 
     arr.parent = parent
     arr.sub(onchange)
-    cleanupFuncs.z(() => { arr.unsub(onchange) })
+    cleanupFuncs.Z(() => { arr.unsub(onchange) })
   }
   return frag
 }
@@ -518,7 +530,7 @@ export const new_dom_context = (no_cleanup) => {
       : new (customElements.get(el))
   })
 
-  if (!no_cleanup) h.z(() => ctx.cleanup())
+  if (!no_cleanup) h.Z(() => ctx.cleanup())
   ctx.context = new_dom_context
   return ctx
 }
@@ -526,7 +538,7 @@ export const new_dom_context = (no_cleanup) => {
 export const new_svg_context = (no_cleanup) => {
   var ctx = hyper_hermes((el) => doc.createElementNS('http://www.w3.org/2000/svg', el))
 
-  if (!no_cleanup) s.z(() => ctx.cleanup())
+  if (!no_cleanup) s.Z(() => ctx.cleanup())
   ctx.context = new_svg_context
   return ctx
 }
@@ -535,6 +547,7 @@ export var h = new_dom_context(1)
 export var s = new_svg_context(1)
 
 export const make_child_node = (parent, v, cleanupFuncs, _placeholder) => {
+  if (DEBUG) assert_cleanupFuncs(cleanupFuncs)
   return isNode(v) ? v
     : is_array(v) ? arrayFragment(parent, v, cleanupFuncs)
     : is_fn(v) ? (
@@ -548,7 +561,7 @@ export const make_child_node = (parent, v, cleanupFuncs, _placeholder) => {
       v.then((v, node) => {
         node = make_child_node(parent, v, cleanupFuncs)
         if (DEBUG && _placeholder.p !== parent) error('promise unable to insert itself into the dom because parentNode has changed')
-        else parent.rC(node, _placeholder), cleanupFuncs.z(() => node.rm())
+        else parent.rC(node, _placeholder), cleanupFuncs.Z(() => node.rm())
       }),
       _placeholder = comment(DEBUG ? '2:promise-value' : 2)
     )
@@ -563,7 +576,7 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
       // observable
       parent.aC(r = comment(DEBUG ? '3:obv-value' : 3))
       parent.aC(placeholder = comment(DEBUG ? '4:obv-bottom' : 4))
-      cleanupFuncs.z(v((val) => {
+      cleanupFuncs.Z(v((val) => {
         nn = make_child_node(parent, val, cleanupFuncs)
         if (is_array(r)) {
           each(r, v => {
@@ -620,12 +633,8 @@ export const make_obv_child_node = (parent, v, cleanupFuncs) => {
 import { camelize, float } from '@hyper/utils'
 import { value2 } from '@hyper/dom/observable'
 
-export const set_style = (e, style, cleanupFuncs) => {
-  if (!cleanupFuncs) {
-    cleanupFuncs = el_ctx(e).x
-  } else if (DEBUG) {
-    assert_cleanupFuncs(cleanupFuncs)
-  }
+export const set_style = (e, style, cleanupFuncs = e.X) => {
+  if (DEBUG) assert_cleanupFuncs(cleanupFuncs)
 
   if (is_obj(style)) {
     every(style, (val, k) => {
@@ -652,7 +661,7 @@ export const set_style = (e, style, cleanupFuncs) => {
         return v && v.substr(-2) === 'px' ? float(v) : v
       }
       if (is_obv(val)) {
-        cleanupFuncs.z(val(setter, 1))
+        cleanupFuncs.Z(val(setter, 1))
         if (val() == null) val(getter())
       } else {
         if (DEBUG && !is_str(val) && !is_num(val))
@@ -677,8 +686,10 @@ import obj_value from '@hyper/obv/obj_value'
 import { update_obv } from '@hyper/dom/observable-event'
 
 export const assert_cleanupFuncs = (cleanupFuncs) => {
-  if (DEBUG && (!is_array(cleanupFuncs) || !cleanupFuncs.z))
+  if (DEBUG && (!is_array(cleanupFuncs) || !cleanupFuncs.Z)) {
+    debugger
     error('bad cleanupFuncs')
+  }
 }
 
 const EL_CTX = new WeakMap()
@@ -696,7 +707,7 @@ export const global_ctx = () => {
     // c: compute,
     c: (obvs, compute_fn, obv) => {
       obv = compute(obvs, compute_fn)
-      h.z(obv.x)
+      h.Z(obv.x)
       return obv
     },
     m: update_obv,
@@ -718,8 +729,8 @@ export const global_ctx = () => {
 
       return txt
     },
-    x: h.x,
-    z: h.z,
+    X: h.X,
+    Z: h.Z,
   }, (G) => {
     ctx = G
     // ensure the global ctx does not get garbage collected
@@ -734,7 +745,7 @@ export const global_ctx = () => {
     })
 
     // bind the global ctx to a meta tag in the head called 'global_ctx'
-    return doc.head.aC(h('meta#global_ctx'))
+    return doc.head.aC(h('meta#global_ctx'), h.X)
   })
   return EL_CTX.get(el) // el_ctx(el)
 }
@@ -743,6 +754,10 @@ export const el_ctx = (el) => {
   var ctx
   while ((ctx = EL_CTX.get(el)) == null && (el = el.p) != null) {}
   return ctx || global_ctx()
+}
+
+export const el_cleanupFuncs = (el) => {
+  return ctx_el(el).x
 }
 
 export const ctx_el = (ctx) => {
@@ -779,7 +794,7 @@ export const new_ctx = (G, fn, ...args) => {
   if (DEBUG && typeof fn !== 'function') error('new_ctx is now called with a function which returns an element')
 
   var cleanupFuncs = []
-  cleanupFuncs.z = (fn) => {
+  cleanupFuncs.Z = (fn) => {
     cleanupFuncs.push(
       DEBUG && typeof fn !== 'function'
       ? error('adding a non-function value to cleanupFuncs')
@@ -787,12 +802,19 @@ export const new_ctx = (G, fn, ...args) => {
     )
     return fn
   }
+  var cleanup = (_f) => {
+    while (_f = cleanupFuncs.pop()) _f()
+    if (_f = ctx._h) _f.cleanup()
+    if (_f = ctx._s) _f.cleanup()
+  }
   var obvs = Object.create(G.o, {})
   var ctx = Object.create(G, {
     _id: define_value(++last_id),
     o: define_value(obvs),
-    x: define_value(cleanupFuncs),
-    z: define_value(cleanupFuncs.z),
+    x: define_getter(() => { debugger }),
+    z: define_getter(() => { debugger }),
+    X: define_value(cleanupFuncs),
+    Z: define_value(cleanupFuncs.Z),
     _h: define_value(null, true),
     _s: define_value(null, true),
     h: define_getter(() => ctx._h || (ctx._h = G.h.context())),
@@ -802,16 +824,13 @@ export const new_ctx = (G, fn, ...args) => {
     c: define_value((obvs, compute_fn, obv) => {
       obv = compute(obvs, compute_fn)
       if (DEBUG && !obv.x) error('not a valid cleanup function')
-      cleanupFuncs.push(obv.x)
+      cleanupFuncs.Z(obv.x)
       return obv
     }),
     parent: define_value(G),
     nogc: define_value(0),
-    cleanup: define_value((f) => {
-      while (f = cleanupFuncs.pop()) f()
-      if (f = ctx._h) f.cleanup()
-      if (f = ctx._s) f.cleanup()
-    })
+    cleanup: define_value(cleanup),
+    // x: define_value(cleanup),
   })
 
   var el = fn(ctx, ...args)
@@ -843,8 +862,10 @@ Node_prototype.rm = function () {
 
 // shortcut to append multiple children (w/ cleanupFuncs)
 Node_prototype.iB = function (el, before_node, cleanupFuncs) {
-  if (!cleanupFuncs) cleanupFuncs = el_ctx(el).x
-  return this.insertBefore(make_obv_child_node(this, el, cleanupFuncs), before_node)
+  return this.insertBefore(
+    isNode(el) ? el : make_obv_child_node(this, el, cleanupFuncs),
+    before_node
+  )
 }
 
 // shortcut to append multiple children (w/ cleanupFuncs)
@@ -861,10 +882,11 @@ Node_prototype.rC = function (new_child, old_child) {
 define_props(Node_prototype, {
   p: define_getter(function () { return this.parentNode }),
   n: define_getter(function () { return this.childNodes }),
+  X: define_getter(function () { return ctx_el(this).x }),
 })
 
 // shortcut to apply attributes as if they were the second argument to `h('.lala', {these ones}, ...)`
-Node_prototype.attrs = function (obj, cleanupFuncs) {
+Node_prototype.attrs = function (obj, cleanupFuncs = this.X) {
   every(obj, (v, k) => set_attr(this, k, v, cleanupFuncs))
 }
 

@@ -19,7 +19,7 @@ export const section = (G, name, fn) => {
   let el = this[section_name] || (this[section_name] = value())
   if (typeof fn === 'function') {
     let local_ctx = todo_get_context(section_name + '_ctx')
-    G.z(() => local_ctx.cleanup())
+    G.Z(() => local_ctx.cleanup())
     el(fn.call(this, local_ctx))
   } else {
     el(comment('SECTION:' + name))

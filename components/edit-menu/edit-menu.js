@@ -7,7 +7,7 @@ import ctx_boink from '@hyper/dom/ctx_boink'
 import './edit-menu.less'
 
 const render_edit_menu = (G, items) => {
-  var { h, s, m, v, z } = G
+  var { h, s, m, v, Z } = G
   var show_menu_obv
   var edit_menu_el
   const show_menu = () => {
@@ -34,7 +34,7 @@ const render_edit_menu = (G, items) => {
         s.bottom = height - rect.bottom
       }
 
-      z(() => edit_menu_el.rm())
+      Z(() => edit_menu_el.rm())
       ctx_el(G.top).aC(
         edit_menu_el =
         h('ul.edit-menu', {visible: show_menu_obv, s},
