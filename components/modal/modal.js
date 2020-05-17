@@ -9,7 +9,7 @@ export default function modal (G, opts = {}) {
     // rm both cleans and removes the element
     el.rm()
   }
-  var el = new_ctx(G, function (G) {
+  var el = new_ctx(G, (G) => {
     var {h, v, t} = G
     var background_closes_modal = !opts.no_background_close
     var no_close_button = opts.close_button != 1
@@ -19,7 +19,7 @@ export default function modal (G, opts = {}) {
 
     var el =
     h('.modal-background', {
-      content, footer, title,
+      extend: { content, footer, title, close },
       boink: (ev) => {
         return ev.target === el && background_closes_modal && close()
       },
@@ -50,7 +50,6 @@ export default function modal (G, opts = {}) {
     return el
   })
 
-  el.close = close
   frame.aC(el)
   return el
 }
