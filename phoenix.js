@@ -1,3 +1,7 @@
+import { win, WebSocket } from '@hyper/global'
+import { setTimeout, setInterval } from '@hyper/global'
+import { clearTimeout, clearInterval } from '@hyper/global'
+import { on } from '@hyper/dom-base'
 
 /**
  * Phoenix Channels JavaScript client
@@ -185,10 +189,6 @@
  * ```
  * @module phoenix
  */
-
-import { win, WebSocket } from '@hyper/global'
-import { setTimeout, setInterval } from '@hyper/global'
-import { clearTimeout, clearInterval } from '@hyper/global'
 
 const DEFAULT_VSN = "2.0.0"
 const SOCKET_STATES = {connecting: 0, open: 1, closing: 2, closed: 3}
