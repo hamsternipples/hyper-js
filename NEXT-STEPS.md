@@ -2,9 +2,19 @@
 ### easy things
 - move new-project/architect into hyper (so everything needed to build hyper is here)
 - make phx-lite Socket, Timer a closure instead of a class.
+- make a generic version of channel.join().receive('ok', ...).receive('error', ...)
 
 
-### uniform function call syntax (ufcs) plugin for rollup
+### rollup plugins
+
+#### reuse primitives transformations
+anything that's in @hyper/global, can be transformed.
+that means that all the functions exported by global are tested to see if they exist in each file passing through the transform. if the ast is recognised, eg. `typeof val === 'string'` -> `is_str(val)` (and make sure to import is_str from @hyper/global)
+
+next, any references that are exported in global will get imported so they have the advantage of being mangled to a smaller name.
+
+
+#### uniform function call syntax (ufcs) plugin for rollup
 
 see: [ufcs](https://en.wikipedia.org/wiki/Uniform_Function_Call_Syntax) for more info. this could be parsed in js using for example, the `#` to specify that it's ufcs syntax.
 
@@ -25,6 +35,11 @@ it seems like it may be possible, though some of the parsers spit out an error: 
 
 since it's a parse error, and I already use `%` for some things, it may be possible to use `%`. another possiblity is to use the `|`, because or-statements are not really used.
 
+#### const -> var converter
+
+run this before, or extend the const-to-let plugin, so that when the const appears in a place other than a for-loop, and there are no conflicting variable names, convert it to a var instad of a let.
+
+the reason is that var gets compressed a bit better because they are all defined at the topmost (program or function) scope, so they can be grouped together nicely, saving 3-4 bytes per definition.
 
 ### html parser
 
