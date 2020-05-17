@@ -195,21 +195,21 @@ import { define_props, define_getter } from '@hyper/utils'
  */
 
 const DEFAULT_VSN = '2.0.0'
-const SOCKET_STATE_CONNECTING = 0
-const SOCKET_STATE_OPEN = 1
-const SOCKET_STATE_CLOSING = 2
-const SOCKET_STATE_CLOSED = 3
+export const SOCKET_STATE_CONNECTING = 0
+export const SOCKET_STATE_OPEN = 1
+export const SOCKET_STATE_CLOSING = 2
+export const SOCKET_STATE_CLOSED = 3
 
 const DEFAULT_TIMEOUT = 10000
 const WS_CLOSE_NORMAL = 1000
 
-const CHANNEL_STATE_CLOSED = 1
-const CHANNEL_STATE_JOINING = 2
-const CHANNEL_STATE_JOINED = 3
-const CHANNEL_STATE_LEAVING = 4
-const CHANNEL_STATE_ERRORED = 9
+export const CHANNEL_STATE_CLOSED = 1
+export const CHANNEL_STATE_JOINING = 2
+export const CHANNEL_STATE_JOINED = 3
+export const CHANNEL_STATE_LEAVING = 4
+export const CHANNEL_STATE_ERRORED = 9
 
-const CHANNEL_LIFECYCLE_EVENTS = [
+export const CHANNEL_LIFECYCLE_EVENTS = [
   'phx_close',
   'phx_join',
   'phx_reply',
@@ -348,19 +348,61 @@ function Push (channel, event, payload, push_timeout) {
  * @param {Socket} socket
  */
 export function Channel (channel_topic, params, socket) {
-  params = closure(params || {})
-
   if (DEBUG && !channel_topic) error('no topic')
+
+  var rejoinTimer, joinPush, stateChangeRefs
+  var channel_state = CHANNEL_STATE_CLOSED
+  var bindings = []
+  var bindingRef = 0
+  var channel_timeout = socket.timeout
+  if(DEBUG && !channel_timeout) error('no channel timeout defined')
+  var has_joined = false
+  var pushBuffer = []
+
   /**
    * Join the channel
    * @param {integer} timeout
    * @returns {Push}
    */
-  const join = (timeout = channel_timeout) => {
+  const join = (join_params, timeout = channel_timeout) => {
     if (has_joined) {
       DEBUG && error(`tried to join multiple times. 'join' can only be called a single time per channel instance`)
     } else {
       if (DEBUG && !timeout) error('no timeout')
+      params = closure(join_params || params || {})
+
+      rejoinTimer = new Timer(() => {
+        if (socket.isConnected()) rejoin()
+      }, socket.rejoinAfterMs)
+      stateChangeRefs = [
+        socket.onError(() => rejoinTimer.reset()),
+        socket.onOpen(() => {
+          rejoinTimer.reset()
+          if (channel_state === CHANNEL_STATE_ERRORED) rejoin()
+        }),
+      ]
+      joinPush = new Push(channel, 'phx_join', params, channel_timeout)
+      joinPush.receive('ok', () => {
+        channel_state = CHANNEL_STATE_JOINED
+        rejoinTimer.reset()
+        each(pushBuffer, pushEvent => pushEvent.send())
+        pushBuffer = []
+      })
+      joinPush.receive('error', () => {
+        channel_state = CHANNEL_STATE_ERRORED
+        if (socket.isConnected()) rejoinTimer.scheduleTimeout()
+      })
+      joinPush.receive('timeout', () => {
+        if (socket.logger) {
+          socket.log('channel', `timeout ${channel_topic} (${channel.joinRef})`, joinPush.timeout)
+        }
+        let leavePush = new Push(channel, 'phx_leave', closure({}), channel_timeout)
+        leavePush.send()
+        channel_state = CHANNEL_STATE_ERRORED
+        joinPush.reset()
+        if (socket.isConnected()) rejoinTimer.scheduleTimeout()
+      })
+
       channel_timeout = timeout
       has_joined = true
       rejoin()
@@ -531,6 +573,23 @@ export function Channel (channel_topic, params, socket) {
     }
   }
 
+  onClose(() => {
+    rejoinTimer.reset()
+    if (socket.logger) socket.log('channel', `close ${channel_topic} ${channel.joinRef}`)
+    channel_state = CHANNEL_STATE_CLOSED
+    socket.remove(channel)
+  })
+  onError(reason => {
+    if (socket.logger) socket.log('channel', `error ${channel_topic}`, reason)
+    if (channel_state === CHANNEL_STATE_JOINING) joinPush.reset()
+    channel_state = CHANNEL_STATE_ERRORED
+    if (socket.isConnected()) rejoinTimer.scheduleTimeout()
+  })
+
+  on('phx_reply', (payload, ref) => {
+    trigger(`chan_reply_${ref}`, payload)
+  })
+
   var channel = {
     // methods
     join, onClose, onError, on, off,
@@ -546,62 +605,6 @@ export function Channel (channel_topic, params, socket) {
     state: define_getter(() => channel_state),
     joinRef: define_getter(() => joinPush.ref),
     stateChangeRefs: define_getter(() => stateChangeRefs),
-  })
-
-  var channel_state = CHANNEL_STATE_CLOSED
-  var bindings = []
-  var bindingRef = 0
-  var channel_timeout = socket.timeout
-  if(DEBUG && !channel_timeout) error('no channel timeout defined')
-  var has_joined = false
-  var joinPush = new Push(channel, 'phx_join', params, channel_timeout)
-  var pushBuffer = []
-  var stateChangeRefs = [
-    socket.onError(() => rejoinTimer.reset()),
-    socket.onOpen(() => {
-      rejoinTimer.reset()
-      if (channel_state === CHANNEL_STATE_ERRORED) rejoin()
-    }),
-  ]
-
-  var rejoinTimer = new Timer(() => {
-    if (socket.isConnected()) rejoin()
-  }, socket.rejoinAfterMs)
-
-  joinPush.receive('ok', () => {
-    channel_state = CHANNEL_STATE_JOINED
-    rejoinTimer.reset()
-    each(pushBuffer, pushEvent => pushEvent.send())
-    pushBuffer = []
-  })
-  joinPush.receive('error', () => {
-    channel_state = CHANNEL_STATE_ERRORED
-    if (socket.isConnected()) rejoinTimer.scheduleTimeout()
-  })
-  onClose(() => {
-    rejoinTimer.reset()
-    if (socket.logger) socket.log('channel', `close ${channel_topic} ${channel.joinRef}`)
-    channel_state = CHANNEL_STATE_CLOSED
-    socket.remove(channel)
-  })
-  onError(reason => {
-    if (socket.logger) socket.log('channel', `error ${channel_topic}`, reason)
-    if (channel_state === CHANNEL_STATE_JOINING) joinPush.reset()
-    channel_state = CHANNEL_STATE_ERRORED
-    if (socket.isConnected()) rejoinTimer.scheduleTimeout()
-  })
-  joinPush.receive('timeout', () => {
-    if (socket.logger) {
-      socket.log('channel', `timeout ${channel_topic} (${channel.joinRef})`, joinPush.timeout)
-    }
-    let leavePush = new Push(channel, 'phx_leave', closure({}), channel_timeout)
-    leavePush.send()
-    channel_state = CHANNEL_STATE_ERRORED
-    joinPush.reset()
-    if (socket.isConnected()) rejoinTimer.scheduleTimeout()
-  })
-  on('phx_reply', (payload, ref) => {
-    trigger(`chan_reply_${ref}`, payload)
   })
 
   return channel
