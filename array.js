@@ -58,6 +58,8 @@ export const concat_many = (arr1, arr2, ...more) => {
 }
 export const concat = (arr1, arr2) => ([...arr1, ...arr2])
 
+export const prepend = (item, arr) => ([item, ...arr])
+
 export const empty_array = (n = 0, init_value = 0, _arr) => {
   _arr = new_array(n)
   while (n-- > 0) _arr[n] = is_fn(init_value) ? init_value(n) : init_value
