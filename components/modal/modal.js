@@ -11,35 +11,38 @@ export default function modal (G, opts = {}) {
   }
   var el = new_ctx(G, function (G) {
     var {h, v, t} = G
-    opts.title = v(opts.title || null) // null so that it gets a value. if it remains undefined, the obv won't init.
-    opts.content = v(opts.content(G))
-    opts.footer = v(opts.footer)
+    var background_closes_modal = !opts.no_background_close
     var no_close_button = opts.close_button != 1
+    var title = v(opts.title || null) // null so that it gets a value. if it remains undefined, the obv won't init.
+    var content = v(opts.content(G))
+    var footer = v(opts.footer)
 
     var el =
     h('.modal-background', {
+      content, footer, title,
       boink: (ev) => {
-        ev.target === el && !opts.no_background_close && close()
+        return ev.target === el && background_closes_modal && close()
       },
       keydown: (ev) => {
-        ev.which === 27 && !opts.no_background_close && close()
+        return ev.which === 27 && background_closes_modal && close()
       }
     },
       h('.modal',
-        t(opts.title, (title) => title ?
-          h('h1.header', opts.title,
-            no_close_button ? null : {style: {paddingRight: '40px'}},
-            no_close_button ? null :
-              h('.modal-close', {boink: close}, h('i.close'))
+        t(title, (title) => title ?
+          h('h1.header', title,
+            no_close_button ? null
+              : {style: {paddingRight: '40px'}},
+            no_close_button ? null
+              : h('.modal-close', {boink: close}, h('i.close'))
           ) :
           h('.headerless',
-            no_close_button ? null :
-              h('.modal-close', {boink: close}, h('i.close'))
+            no_close_button ? null
+              : h('.modal-close', {boink: close}, h('i.close'))
           )
         ),
-        h('.modal-content', opts.content),
-        t(opts.footer, (foot) => foot ?
-          h('.modal-footer', opts.footer) : null
+        h('.modal-content', content),
+        t(footer, (foot) => foot ?
+          h('.modal-footer', footer) : null
         )
       )
     )
