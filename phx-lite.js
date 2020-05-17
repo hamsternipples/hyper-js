@@ -310,7 +310,7 @@ function Push (channel, event, payload, push_timeout) {
       event: event,
       payload: payload(),
       ref: ref,
-      join_ref: channel.joinRef()
+      join_ref: channel.joinRef
     })
 
     return push
@@ -327,12 +327,13 @@ function Push (channel, event, payload, push_timeout) {
 
   var push = {
     // methods
-    resend, send, receive, reset,
+    resend, send, receive, reset, cancelTimeout, trigger,
   }
 
   // read-only members
   define_props(push, {
-    timeout: define_getter(() => push_timeout)
+    timeout: define_getter(() => push_timeout),
+    ref: define_getter(() => ref),
   })
 
 
@@ -342,14 +343,14 @@ function Push (channel, event, payload, push_timeout) {
 
 /**
  *
- * @param {string} topic
+ * @param {string} channel_topic
  * @param {(Object|function)} params
  * @param {Socket} socket
  */
-export function Channel (topic, params, socket) {
+export function Channel (channel_topic, params, socket) {
   params = closure(params || {})
 
-  if (DEBUG && !topic) error('no topic')
+  if (DEBUG && !channel_topic) error('no topic')
   /**
    * Join the channel
    * @param {integer} timeout
@@ -449,7 +450,7 @@ export function Channel (topic, params, socket) {
    */
   const push = (event, payload, timeout = channel_timeout) => {
     if (!has_joined) {
-      error(`tried to push '${event}' to '${topic}' before joining. Use channel.join() before pushing events`)
+      error(`tried to push '${event}' to '${channel_topic}' before joining. Use channel.join() before pushing events`)
     }
     let pushEvent = new Push(channel, event, (() => payload), timeout)
     if (canPush()) {
@@ -482,10 +483,11 @@ export function Channel (topic, params, socket) {
     rejoinTimer.reset()
     joinPush.cancelTimeout()
 
-    state = CHANNEL_STATE_LEAVING
+    channel_state = CHANNEL_STATE_LEAVING
     let onClose = () => {
-      if (socket.logger) socket.log('channel', `leave ${topic}`)
+      if (socket.logger) socket.log('channel', `leave ${channel_topic}`)
       trigger('phx_close', 'leave')
+      delete socket.topics[channel_topic]
     }
     let leavePush = new Push(channel, 'phx_leave', closure({}), timeout)
     leavePush
@@ -498,8 +500,8 @@ export function Channel (topic, params, socket) {
   }
 
   const isMember = (topic, event, payload, joinRef) => {
-    if (topic !== topic) return false
-    if (joinRef && joinRef !== channel.joinRef() && ~CHANNEL_LIFECYCLE_EVENTS.indexOf(event)) {
+    if (topic !== channel_topic) return false
+    if (joinRef && joinRef !== channel.joinRef && ~CHANNEL_LIFECYCLE_EVENTS.indexOf(event)) {
       if (socket.logger) socket.log('channel', 'dropping outdated message', {topic, event, payload, joinRef})
       return false
     } else {
@@ -509,43 +511,44 @@ export function Channel (topic, params, socket) {
 
 
   const canPush = () => {
-    return socket.isConnected() && state === CHANNEL_STATE_JOINED
+    return socket.isConnected() && channel_state === CHANNEL_STATE_JOINED
   }
 
-  const joinRef = () => joinPush.ref
-
   const sendJoin = (timeout) => {
-    state = CHANNEL_STATE_JOINING
+    channel_state = CHANNEL_STATE_JOINING
     joinPush.resend(timeout)
   }
 
   const rejoin = (timeout = channel_timeout) => {
-    if (state !== CHANNEL_STATE_LEAVING) sendJoin(timeout)
+    if (channel_state !== CHANNEL_STATE_LEAVING) sendJoin(timeout)
   }
 
   const trigger = (event, payload, ref, joinRef) => {
     for (let i = 0; i < bindings.length; i++) {
       const bind = bindings[i]
       if (bind.event !== event) continue
-      bind.callback(payload, ref, joinRef || channel.joinRef())
+      bind.callback(payload, ref, joinRef || channel.joinRef)
     }
   }
 
   var channel = {
     // methods
-    join, onClose, onError, on, off, joinRef,
+    join, onClose, onError, on, off,
     push, leave, trigger, isMember,
     // by-ref members (they're objects, so they can be accessed)
-    socket, stateChangeRefs,
+    socket,
+    //stateChangeRefs,
   }
 
   // read-only members
   define_props(channel, {
-    topic: define_getter(() => topic),
-    state: define_getter(() => state)
+    topic: define_getter(() => channel_topic),
+    state: define_getter(() => channel_state),
+    joinRef: define_getter(() => joinPush.ref),
+    stateChangeRefs: define_getter(() => stateChangeRefs),
   })
 
-  var state = CHANNEL_STATE_CLOSED
+  var channel_state = CHANNEL_STATE_CLOSED
   var bindings = []
   var bindingRef = 0
   var channel_timeout = socket.timeout
@@ -557,7 +560,7 @@ export function Channel (topic, params, socket) {
     socket.onError(() => rejoinTimer.reset()),
     socket.onOpen(() => {
       rejoinTimer.reset()
-      if (state === CHANNEL_STATE_ERRORED) rejoin()
+      if (channel_state === CHANNEL_STATE_ERRORED) rejoin()
     }),
   ]
 
@@ -566,34 +569,34 @@ export function Channel (topic, params, socket) {
   }, socket.rejoinAfterMs)
 
   joinPush.receive('ok', () => {
-    state = CHANNEL_STATE_JOINED
+    channel_state = CHANNEL_STATE_JOINED
     rejoinTimer.reset()
     each(pushBuffer, pushEvent => pushEvent.send())
     pushBuffer = []
   })
   joinPush.receive('error', () => {
-    state = CHANNEL_STATE_ERRORED
+    channel_state = CHANNEL_STATE_ERRORED
     if (socket.isConnected()) rejoinTimer.scheduleTimeout()
   })
   onClose(() => {
     rejoinTimer.reset()
-    if (socket.logger) socket.log('channel', `close ${topic} ${joinRef()}`)
-    state = CHANNEL_STATE_CLOSED
+    if (socket.logger) socket.log('channel', `close ${channel_topic} ${channel.joinRef}`)
+    channel_state = CHANNEL_STATE_CLOSED
     socket.remove(channel)
   })
   onError(reason => {
-    if (socket.logger) socket.log('channel', `error ${topic}`, reason)
-    if (state === CHANNEL_STATE_JOINING) joinPush.reset()
-    state = CHANNEL_STATE_ERRORED
+    if (socket.logger) socket.log('channel', `error ${channel_topic}`, reason)
+    if (channel_state === CHANNEL_STATE_JOINING) joinPush.reset()
+    channel_state = CHANNEL_STATE_ERRORED
     if (socket.isConnected()) rejoinTimer.scheduleTimeout()
   })
   joinPush.receive('timeout', () => {
     if (socket.logger) {
-      socket.log('channel', `timeout ${topic} (${joinRef()})`, joinPush.timeout)
+      socket.log('channel', `timeout ${channel_topic} (${channel.joinRef})`, joinPush.timeout)
     }
     let leavePush = new Push(channel, 'phx_leave', closure({}), channel_timeout)
     leavePush.send()
-    state = CHANNEL_STATE_ERRORED
+    channel_state = CHANNEL_STATE_ERRORED
     joinPush.reset()
     if (socket.isConnected()) rejoinTimer.scheduleTimeout()
   })
@@ -692,6 +695,7 @@ export class Socket {
   constructor (endPoint, opts = {}) {
     this.stateChangeCallbacks = {open: [], close: [], error: [], message: []}
     this.channels = []
+    this.topics = {}
     this.sendBuffer = []
     this.ref = 0
     this.timeout = opts.timeout || DEFAULT_TIMEOUT
@@ -734,16 +738,6 @@ export class Socket {
     this.reconnectTimer = new Timer(() => {
       this.teardown(() => this.connect())
     }, this.reconnectAfterMs)
-  }
-
-
-  /**
-   * The fully qualifed socket url
-   *
-   * @returns {string}
-   */
-  endPointURL () {
-
   }
 
   /**
@@ -795,11 +789,6 @@ export class Socket {
   log (kind, msg, data) {
     this.logger(kind, msg, data)
   }
-
-  /**
-   * Returns true if a logger has been set on this socket.
-   */
-  hasLogger () { return this.logger !== null }
 
   /**
    * Registers callbacks for connection open events
@@ -925,7 +914,7 @@ export class Socket {
    */
   remove (channel) {
     this.off(channel.stateChangeRefs)
-    this.channels = this.channels.filter(c => c.joinRef() !== channel.joinRef())
+    this.channels = this.channels.filter(c => c.joinRef !== channel.joinRef)
   }
 
   /**
@@ -950,8 +939,13 @@ export class Socket {
    * @returns {Channel}
    */
   channel (topic, chanParams = {}) {
-    let chan = new Channel(topic, chanParams, this)
-    this.channels.push(chan)
+    let chan = this.topics[topic]
+    if (!chan) {
+      this.topics[topic] = chan = new Channel(topic, chanParams, this)
+      this.channels.push(chan)
+    } else {
+      if (DEBUG) error('trying to make a duplicate join. bad')
+    }
     return chan
   }
 
@@ -1014,7 +1008,9 @@ export class Socket {
         this.pendingHeartbeatRef = null
       }
 
-      if (this.logger) this.log('receive', `${payload.status || ""} ${topic} ${event} ${ref && "(" + ref + ")" || ""}`, payload)
+      if (this.logger) {
+        this.log('receive', `${payload.status || ''} ${topic} ${event} ${ref && '(' + ref + ')' || ''}`, payload)
+      }
 
       for (let i = 0; i < this.channels.length; i++) {
         const channel = this.channels[i]
@@ -1076,7 +1072,7 @@ export class Presence {
     this.channel.on(events.state, newState => {
       let {onJoin, onLeave, onSync} = this.caller
 
-      this.joinRef = this.channel.joinRef()
+      this.joinRef = this.channel.joinRef
       this.state = Presence.syncState(this.state, newState, onJoin, onLeave)
 
       each(this.pendingDiffs, diff => {
@@ -1107,7 +1103,7 @@ export class Presence {
   list (by) { return Presence.list(this.state, by) }
 
   inPendingSyncState () {
-    return !this.joinRef || (this.joinRef !== this.channel.joinRef())
+    return !this.joinRef || (this.joinRef !== this.channel.joinRef)
   }
 
   // lower-level public static API
